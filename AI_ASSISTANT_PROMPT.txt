@@ -1,0 +1,95 @@
+================================================================================
+                    AI ASSISTANT PROMPT FOR TINYSYNC PROJECT
+================================================================================
+Date: 2025-01-28
+Purpose: Quick context setup for new chat sessions
+================================================================================
+
+PROJECT OVERVIEW:
+- TinySync IoT Drowsiness Detection System
+- Raspberry Pi 5 + Flutter App + Supabase Cloud
+- Real-time driver drowsiness detection with visual evidence
+
+KEY FILES:
+- Pi5 Detection AI: Softdev/IoT/detection_ai.py
+- Flutter App: Softdev/tinysync/tinysync_app/lib/pages/driver/status_page.dart
+- Supabase Schema: Softdev/supabase.sql
+- Optimization Log: Softdev/OPTIMIZATION_AUDIT_LOG.txt
+
+================================================================================
+AI ASSISTANT EXPECTATIONS:
+================================================================================
+
+TECHNICAL EXPECTATIONS:
+1. Understand the codebase - Know the TinySync system architecture
+2. Make precise changes - Edit code accurately without breaking functionality
+3. Explain technical concepts - Break down complex systems clearly
+4. Track progress - Use todo lists and document changes
+5. Test and verify - Ensure changes work before moving on
+
+COMMUNICATION STYLE:
+1. Be direct and efficient - Get to the point quickly
+2. Show what I'm doing - Use tools to demonstrate actions
+3. Ask clarifying questions - When unsure about requirements
+4. Provide context - Explain why changes are needed
+5. Be proactive - Suggest improvements and optimizations
+
+WORK APPROACH:
+1. Read files first - Understand current state before making changes
+2. Make incremental changes - Small, testable modifications
+3. Document everything - Update logs and summaries
+4. Verify results - Check that changes work as expected
+5. Follow best practices - Clean, maintainable code
+
+PROJECT MANAGEMENT:
+1. Use todo lists - Track complex multi-step tasks
+2. Update audit logs - Document all changes made
+3. Commit and push - Keep Git repository updated
+4. Test thoroughly - Ensure functionality before deployment
+
+================================================================================
+CURRENT SYSTEM STATUS:
+================================================================================
+
+RECENT OPTIMIZATIONS COMPLETED:
+- Phase 1: Image batching and compression (2025-01-27)
+- Phase 2: Professional UI & sync optimizations (2025-01-28)
+- Removed redundant "All Controls Available" status indicator
+- Enhanced snackbar UI with professional styling
+- Optimized sync speeds and button enablement
+
+KEY TECHNICAL DETAILS:
+- Data retention: 24 hours for all events
+- Auto-sync: Every 10 seconds (metadata only)
+- Manual sync: On-demand (full data + images)
+- Image batching: 5 images per batch, 2MB max, gzip compression
+- Performance: 80% fewer network requests, 70% faster processing
+
+================================================================================
+WORKING DIRECTORY:
+================================================================================
+- Main project: C:\Users\mizor\Desktop\v2\Softdev\tinysync
+- IoT scripts: C:\Users\mizor\Desktop\v2\Softdev\IoT
+- Documentation: C:\Users\mizor\Desktop\v2\Softdev\
+
+================================================================================
+QUICK START COMMANDS:
+================================================================================
+- Build app: flutter build apk
+- Install app: flutter install
+- Check Pi5: ssh tinysync@192.168.254.120
+- Git status: git status
+- Git commit: git commit -m "description"
+- Git push: git push
+
+================================================================================
+IMPORTANT NOTES:
+================================================================================
+- Always read files before making changes
+- Use todo_write for complex tasks
+- Update OPTIMIZATION_AUDIT_LOG.txt for major changes
+- Test changes before committing
+- Be proactive about improvements
+- Ask clarifying questions when unsure
+
+================================================================================

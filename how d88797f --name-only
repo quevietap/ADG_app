@@ -1,0 +1,93 @@
+[33mcommit d88797f5cfa19fec614ef458e2c17982f34c7352[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: quevietap <quevietap@gmail.com>
+Date:   Tue Sep 23 18:33:38 2025 +0800
+
+    Update driver status page and IoT connection service, add PI5 analysis and detection AI files
+
+[1mdiff --git a/tinysync/tinysync_app/lib/pages/driver/status_page.dart b/tinysync/tinysync_app/lib/pages/driver/status_page.dart[m
+[1mindex 5f5553a..1a46c92 100644[m
+[1m--- a/tinysync/tinysync_app/lib/pages/driver/status_page.dart[m
+[1m+++ b/tinysync/tinysync_app/lib/pages/driver/status_page.dart[m
+[36m@@ -941,11 +941,7 @@[m [mclass _StatusPageState extends State<StatusPage> with TickerProviderStateMixin,[m
+               .timeout(const Duration(seconds: 2));[m
+ [m
+           request.headers.contentType = ContentType.json;[m
+[31m-          final requestData = {[m
+[31m-            'driver_id': currentDriverId,[m
+[31m-            'new_driver': _currentDriver,[m
+[31m-            'driver_type': _currentDriver == "Main Driver" ? 'main' : 'sub',[m
+[31m-          };[m
+[32m+[m[32m          final requestData = {}; // ✅ Simplified - no data needed[m
+           print('🔍 DEBUG: Sending driver switch to IoT: $requestData');[m
+           request.write(json.encode(requestData));[m
+           [m
+[36m@@ -1092,11 +1088,7 @@[m [mclass _StatusPageState extends State<StatusPage> with TickerProviderStateMixin,[m
+               .timeout(const Duration(seconds: 2));[m
+ [m
+           request.headers.contentType = ContentType.json;[m
+[31m-          final requestData = {[m
+[31m-            'driver_id': currentDriverId,[m
+[31m-            'on_break': _isOnBreak,[m
+[31m-            'driver_type': _currentDriver == "Main Driver" ? 'main' : 'sub',[m
+[31m-          };[m
+[32m+[m[32m          final requestData = {}; // ✅ Simplified - no data needed[m
+           print('🔍 DEBUG: Sending break toggle to IoT: $requestData');[m
+           request.write(json.encode(requestData));[m
+           [m
+[36m@@ -1264,15 +1256,7 @@[m [mclass _StatusPageState extends State<StatusPage> with TickerProviderStateMixin,[m
+           '🚀 Sending start detection command via WiFi Direct for $_currentDriver (ID: $currentDriverId)...');[m
+       print([m
+           '🔍 DEBUG: Break state: $_isOnBreak, Monitoring state: $_isMonitoring');[m
+[31m-      bool success = await _iotConnectionService.sendCommand('start', data: {[m
+[31m-        'driver_id': currentDriverId, // ✅ Use correct driver ID[m
+[31m-        'trip_id': _currentTripId, // ✅ Now uses database UUID[m
+[31m-        'trip_ref_number':[m
+[31m-            _dbCurrentTripRefNumber, // ✅ NEW: Send trip reference[m
+[31m-        'driver_type': _currentDriver == "Main Driver"[m
+[31m-            ? 'main'[m
+[31m-            : 'sub', // ✅ Include driver type[m
+[31m-      });[m
+[32m+[m[32m      bool success = await _iotConnectionService.sendCommand('start'); // ✅ Simplified - no data needed[m
+ [m
+       if (!success) {[m
+         print([m
+[36m@@ -1318,15 +1302,7 @@[m [mclass _StatusPageState extends State<StatusPage> with TickerProviderStateMixin,[m
+       final currentDriverId = _getCurrentDriverId();[m
+       print([m
+           '🛑 Sending stop detection command via WiFi Direct for $_currentDriver (ID: $currentDriverId)...');[m
+[31m-      bool success = await _iotConnectionService.sendCommand('stop', data: {[m
+[31m-        'driver_id': currentDriverId, // ✅ Use correct driver ID[m
+[31m-        'trip_id': _currentTripId, // ✅ Now uses database UUID[m
+[31m-        'trip_ref_number':[m
+[31m-            _dbCurrentTripRefNumber, // ✅ NEW: Send trip reference[m
+[31m-        'driver_type': _currentDriver == "Main Driver"[m
+[31m-            ? 'main'[m
+[31m-            : 'sub', // ✅ Include driver type[m
+[31m-      });[m
+[32m+[m[32m      bool success = await _iotConnectionService.sendCommand('stop'); // ✅ Simplified - no data needed[m
+ [m
+       if (!success) {[m
+         print([m
+[1mdiff --git a/tinysync/tinysync_app/lib/services/iot_connection_service.dart b/tinysync/tinysync_app/lib/services/iot_connection_service.dart[m
+[1mindex 38937d2..e950057 100644[m
+[1m--- a/tinysync/tinysync_app/lib/services/iot_connection_service.dart[m
+[1m+++ b/tinysync/tinysync_app/lib/services/iot_connection_service.dart[m
+[36m@@ -474,16 +474,11 @@[m [mclass IoTConnectionService {[m
+       switch (command) {[m
+         case 'start':[m
+           endpoint = '/api/monitoring/start';[m
+[31m-          message = {[m
+[31m-            'driver_id': data?['driver_id'] ?? 'unknown_driver',[m
+[31m-            'trip_id': data?['trip_id'] ?? 'unknown_trip',[m
+[31m-          };[m
+[32m+[m[32m          message = {}; // ✅ Simplified - no data needed[m
+           break;[m
+         case 'stop':[m
+           endpoint = '/api/monitoring/stop';[m
+[31m-          message = {[m
+[31m-            'driver_id': data?['driver_id'] ?? 'unknown_driver',[m
+[31m-          };[m
+[32m+[m[32m          message = {}; // ✅ Simplified - no data needed[m
+           break;[m
+         case 'sync_start':[m
+           // CRITICAL FIX: sync_start should NOT start detection[m
