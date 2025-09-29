@@ -16,6 +16,7 @@ import 'services/notification_service.dart';
 // ✅ Removed navigation service - no FCM dependencies!
 import 'services/overdue_trip_service.dart';
 import 'services/app_lifecycle_service.dart';
+import 'services/location_service.dart';
 import 'widgets/auth_wrapper.dart';
 import 'widgets/driver_notification_alert.dart';
 
@@ -56,7 +57,7 @@ void main() async {
     NotificationService().startOverdueTracking();
 
     // Start processing scheduled notifications every minute
-    Timer.periodic(Duration(minutes: 1), (timer) {
+    Timer.periodic(const Duration(minutes: 1), (timer) {
       NotificationService().processScheduledNotifications();
     });
 
@@ -79,6 +80,14 @@ void main() async {
 
   // Initialize app lifecycle service for better plugin management
   AppLifecycleService().initialize();
+
+  // Clear potentially corrupted location cache to fix type casting issues
+  try {
+    await LocationService().clearLocationCache();
+    print('✅ Location cache cleared to prevent type casting errors');
+  } catch (e) {
+    print('⚠️ Error clearing location cache: $e');
+  }
 
   runApp(const MyApp());
 }

@@ -25,7 +25,7 @@ class _OverdueTripManagerWidgetState extends State<OverdueTripManagerWidget> {
     _setupRealtimeSubscription();
 
     // Refresh every 2 minutes
-    _refreshTimer = Timer.periodic(Duration(minutes: 2), (timer) {
+    _refreshTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
       _loadOverdueTrips();
     });
   }
@@ -259,10 +259,10 @@ class _OverdueTripManagerWidgetState extends State<OverdueTripManagerWidget> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.green, width: 1),
                   ),
-                  child: Row(
+                  child: const Row(
                     children: [
                       Icon(Icons.check_circle, color: Colors.green, size: 24),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'No overdue trips! All trips are on schedule.',
@@ -349,7 +349,7 @@ class _OverdueTripManagerWidgetState extends State<OverdueTripManagerWidget> {
                       ),
                     ),
                     Text(
-                      '${minutesOverdue} min overdue',
+                      '$minutesOverdue min overdue',
                       style: TextStyle(
                         color: severityColor,
                         fontWeight: FontWeight.bold,

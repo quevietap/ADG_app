@@ -51,6 +51,38 @@ class _TripNotificationsOverlayState extends State<TripNotificationsOverlay> {
           );
         }
 
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Colors.red[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Error loading notifications',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.red[400],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please try again',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[400],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
         final notifications = snapshot.data ?? [];
 
         return ListView(
@@ -278,18 +310,31 @@ class _TripNotificationsOverlayState extends State<TripNotificationsOverlay> {
       await Supabase.instance.client
           .from('operator_notifications')
           .update({'is_read': true}).eq('is_read', false);
-      // Refresh the widget and close overlay
+      
+      // Show success feedback
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Marked ${notifications.length} notifications as read'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        
+        // Refresh the widget to show the update
         setState(() {});
-        // Close after a brief delay to show the update
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            Navigator.of(context).pop();
-          }
-        });
       }
     } catch (e) {
       print('Error marking all notifications as read: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error marking notifications as read: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -299,12 +344,22 @@ class _TripNotificationsOverlayState extends State<TripNotificationsOverlay> {
       await Supabase.instance.client
           .from('operator_notifications')
           .update({'is_read': true}).eq('id', notification['id']);
+      
       // Refresh the widget to show the update
       if (mounted) {
         setState(() {});
       }
     } catch (e) {
       print('Error marking notification as read: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error marking notification as read: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 }

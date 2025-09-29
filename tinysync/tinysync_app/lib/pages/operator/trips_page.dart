@@ -867,6 +867,11 @@ class _TripsPageState extends State<TripsPage> {
         final conflictingDriverIds = await _getDriversWithConflictingTrips(
             driverIds, trip['start_time'], trip['id']);
 
+        // Check which drivers are already assigned to this trip
+        final alreadyAssignedDriverIds = <String>[];
+        if (trip['driver_id'] != null) alreadyAssignedDriverIds.add(trip['driver_id']);
+        if (trip['sub_driver_id'] != null) alreadyAssignedDriverIds.add(trip['sub_driver_id']);
+
         // Fetch rating data for all drivers
         final ratingData = await _fetchDriverRatings(driverIds);
 
@@ -874,8 +879,9 @@ class _TripsPageState extends State<TripsPage> {
         for (var driver in drivers) {
           final driverId = driver['id'] as String;
 
-          // Set busy status based on time conflicts
+          // Set status based on conflicts and assignments
           driver['is_busy'] = conflictingDriverIds.contains(driverId);
+          driver['is_already_assigned'] = alreadyAssignedDriverIds.contains(driverId);
 
           // Set rating data
           final ratings = ratingData[driverId];
@@ -1206,8 +1212,44 @@ class _TripsPageState extends State<TripsPage> {
                                                       0.0),
                                                   const SizedBox(height: 4),
                                                   // Driver status badges
-                                                  Row(
+                                                  Wrap(
+                                                    spacing: 4,
+                                                    runSpacing: 2,
                                                     children: [
+                                                      if (driver['is_already_assigned'] == true)
+                                                        Container(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal: 6,
+                                                                  vertical: 2),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: Colors.blue
+                                                                .withOpacity(
+                                                                    0.15),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        10),
+                                                            border: Border.all(
+                                                              color: Colors.blue
+                                                                  .withOpacity(
+                                                                      0.3),
+                                                              width: 0.5,
+                                                            ),
+                                                          ),
+                                                          child: const Text(
+                                                            'ALREADY ASSIGNED',
+                                                            style: TextStyle(
+                                                              color: Colors.blue,
+                                                              fontSize: 9,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                            ),
+                                                          ),
+                                                        ),
                                                       if (driver['is_busy'] ==
                                                           true)
                                                         Container(
@@ -1243,11 +1285,6 @@ class _TripsPageState extends State<TripsPage> {
                                                             ),
                                                           ),
                                                         ),
-                                                      if (isSelected &&
-                                                          driver['is_busy'] ==
-                                                              true)
-                                                        const SizedBox(
-                                                            width: 6),
                                                       if (isSelected)
                                                         Container(
                                                           padding:
@@ -1335,6 +1372,211 @@ class _TripsPageState extends State<TripsPage> {
                                         debugPrint(
                                             'Assigning drivers: $selectedDriverIds to trip ${trip['id']}');
 
+                                        // Check if drivers are already assigned to this trip
+                                        final alreadyAssignedDrivers = <String>[];
+                                        if (trip['driver_id'] != null && selectedDriverIds.contains(trip['driver_id'])) {
+                                          alreadyAssignedDrivers.add(trip['driver_id']);
+                                        }
+                                        if (trip['sub_driver_id'] != null && selectedDriverIds.contains(trip['sub_driver_id'])) {
+                                          alreadyAssignedDrivers.add(trip['sub_driver_id']);
+                                        }
+
+                                        if (alreadyAssignedDrivers.isNotEmpty) {
+                                          // Get already assigned driver names
+                                          final assignedDriverNames = drivers
+                                              .where((driver) => alreadyAssignedDrivers.contains(driver['id']))
+                                              .map((driver) => '${driver['first_name']} ${driver['last_name']}')
+                                              .toList();
+                                          
+                                          if (mounted) {
+                                            showDialog(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (context) => Dialog(
+                                                backgroundColor: Colors.transparent,
+                                                child: Container(
+                                                  constraints: BoxConstraints(
+                                                    maxWidth: MediaQuery.of(context).size.width * 0.9,
+                                                    maxHeight: MediaQuery.of(context).size.height * 0.7,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFF2C2C2C),
+                                                    borderRadius: BorderRadius.circular(16),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black.withOpacity(0.3),
+                                                        blurRadius: 20,
+                                                        offset: const Offset(0, 10),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  child: Column(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      // Header
+                                                      Container(
+                                                        padding: const EdgeInsets.all(20),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.blue.withOpacity(0.1),
+                                                          borderRadius: const BorderRadius.only(
+                                                            topLeft: Radius.circular(16),
+                                                            topRight: Radius.circular(16),
+                                                          ),
+                                                        ),
+                                                        child: Row(
+                                                          children: [
+                                                            Container(
+                                                              padding: const EdgeInsets.all(8),
+                                                              decoration: BoxDecoration(
+                                                                color: Colors.blue.withOpacity(0.2),
+                                                                borderRadius: BorderRadius.circular(8),
+                                                              ),
+                                                              child: const Icon(Icons.info, color: Colors.blue, size: 24),
+                                                            ),
+                                                            const SizedBox(width: 12),
+                                                            const Expanded(
+                                                              child: Text(
+                                                                'Driver Already Assigned',
+                                                                style: TextStyle(
+                                                                  color: Colors.white,
+                                                                  fontSize: 18,
+                                                                  fontWeight: FontWeight.bold,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      // Content
+                                                      Flexible(
+                                                        child: SingleChildScrollView(
+                                                          padding: const EdgeInsets.all(20),
+                                                          child: Column(
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            children: [
+                                                              Text(
+                                                                'The following drivers are already assigned to this trip:',
+                                                                style: TextStyle(
+                                                                  color: Colors.grey[300],
+                                                                  fontSize: 14,
+                                                                ),
+                                                              ),
+                                                              const SizedBox(height: 16),
+                                                              // Assigned drivers list
+                                                              Container(
+                                                                padding: const EdgeInsets.all(12),
+                                                                decoration: BoxDecoration(
+                                                                  color: Colors.blue.withOpacity(0.05),
+                                                                  borderRadius: BorderRadius.circular(8),
+                                                                  border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                                                                ),
+                                                                child: Column(
+                                                                  children: assignedDriverNames.map((name) => Padding(
+                                                                    padding: const EdgeInsets.symmetric(vertical: 4),
+                                                                    child: Row(
+                                                                      children: [
+                                                                        const Icon(Icons.person, color: Colors.blue, size: 18),
+                                                                        const SizedBox(width: 8),
+                                                                        Expanded(
+                                                                          child: Text(
+                                                                            name,
+                                                                            style: const TextStyle(
+                                                                              color: Colors.white,
+                                                                              fontSize: 14,
+                                                                              fontWeight: FontWeight.w500,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  )).toList(),
+                                                                ),
+                                                              ),
+                                                              const SizedBox(height: 16),
+                                                              // Information box
+                                                              Container(
+                                                                padding: const EdgeInsets.all(16),
+                                                                decoration: BoxDecoration(
+                                                                  color: Colors.green.withOpacity(0.1),
+                                                                  borderRadius: BorderRadius.circular(12),
+                                                                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                                                                ),
+                                                                child: const Row(
+                                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                                  children: [
+                                                                    Icon(Icons.check_circle, color: Colors.green, size: 20),
+                                                                    SizedBox(width: 12),
+                                                                    Expanded(
+                                                                      child: Column(
+                                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                                        children: [
+                                                                          Text(
+                                                                            'No action needed:',
+                                                                            style: TextStyle(
+                                                                              color: Colors.green,
+                                                                              fontSize: 14,
+                                                                              fontWeight: FontWeight.bold,
+                                                                            ),
+                                                                          ),
+                                                                          SizedBox(height: 8),
+                                                                          Text(
+                                                                            'These drivers are already properly assigned to this trip. You can proceed with the trip or make other changes as needed.',
+                                                                            style: TextStyle(
+                                                                              color: Colors.green,
+                                                                              fontSize: 12,
+                                                                              height: 1.4,
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      // Actions
+                                                      Container(
+                                                        padding: const EdgeInsets.all(20),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.grey.withOpacity(0.05),
+                                                          borderRadius: const BorderRadius.only(
+                                                            bottomLeft: Radius.circular(16),
+                                                            bottomRight: Radius.circular(16),
+                                                          ),
+                                                        ),
+                                                        child: Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child: ElevatedButton(
+                                                                onPressed: () => Navigator.of(context).pop(),
+                                                                style: ElevatedButton.styleFrom(
+                                                                  backgroundColor: Colors.blue,
+                                                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                                                  shape: RoundedRectangleBorder(
+                                                                    borderRadius: BorderRadius.circular(8),
+                                                                  ),
+                                                                ),
+                                                                child: const Text(
+                                                                  'Continue',
+                                                                  style: TextStyle(color: Colors.white),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                          return; // Stop assignment
+                                        }
+
                                         // Final validation: Check for time conflicts before assignment
                                         final conflictingDrivers =
                                             await _getDriversWithConflictingTrips(
@@ -1343,16 +1585,218 @@ class _TripsPageState extends State<TripsPage> {
                                                 trip['id']);
 
                                         if (conflictingDrivers.isNotEmpty) {
-                                          // Show error message for conflicts
+                                          // Get conflicting driver names for better error message
+                                          final conflictingDriverNames = drivers
+                                              .where((driver) => conflictingDrivers.contains(driver['id']))
+                                              .map((driver) => '${driver['first_name']} ${driver['last_name']}')
+                                              .toList();
+                                          
+                                          // Show detailed error message for conflicts
                                           if (mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                    'Cannot assign drivers: Time conflict detected for ${conflictingDrivers.length} driver(s). Please check their schedules.'),
-                                                backgroundColor: Colors.red,
-                                                duration:
-                                                    const Duration(seconds: 4),
+                                            showDialog(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (context) => Dialog(
+                                                backgroundColor: Colors.transparent,
+                                                child: Container(
+                                                  constraints: BoxConstraints(
+                                                    maxWidth: MediaQuery.of(context).size.width * 0.9,
+                                                    maxHeight: MediaQuery.of(context).size.height * 0.8,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFF2C2C2C),
+                                                    borderRadius: BorderRadius.circular(16),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black.withOpacity(0.3),
+                                                        blurRadius: 20,
+                                                        offset: const Offset(0, 10),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  child: Column(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      // Header
+                                                      Container(
+                                                        padding: const EdgeInsets.all(20),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.red.withOpacity(0.1),
+                                                          borderRadius: const BorderRadius.only(
+                                                            topLeft: Radius.circular(16),
+                                                            topRight: Radius.circular(16),
+                                                          ),
+                                                        ),
+                                                        child: Row(
+                                                          children: [
+                                                            Container(
+                                                              padding: const EdgeInsets.all(8),
+                                                              decoration: BoxDecoration(
+                                                                color: Colors.red.withOpacity(0.2),
+                                                                borderRadius: BorderRadius.circular(8),
+                                                              ),
+                                                              child: const Icon(Icons.warning, color: Colors.red, size: 24),
+                                                            ),
+                                                            const SizedBox(width: 12),
+                                                            const Expanded(
+                                                              child: Text(
+                                                                'Schedule Conflict Detected',
+                                                                style: TextStyle(
+                                                                  color: Colors.white,
+                                                                  fontSize: 18,
+                                                                  fontWeight: FontWeight.bold,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      // Content
+                                                      Flexible(
+                                                        child: SingleChildScrollView(
+                                                          padding: const EdgeInsets.all(20),
+                                                          child: Column(
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            children: [
+                                                              Text(
+                                                                'Cannot assign the following drivers due to schedule conflicts:',
+                                                                style: TextStyle(
+                                                                  color: Colors.grey[300],
+                                                                  fontSize: 14,
+                                                                ),
+                                                              ),
+                                                              const SizedBox(height: 16),
+                                                              // Conflicting drivers list
+                                                              Container(
+                                                                padding: const EdgeInsets.all(12),
+                                                                decoration: BoxDecoration(
+                                                                  color: Colors.red.withOpacity(0.05),
+                                                                  borderRadius: BorderRadius.circular(8),
+                                                                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                                                                ),
+                                                                child: Column(
+                                                                  children: conflictingDriverNames.map((name) => Padding(
+                                                                    padding: const EdgeInsets.symmetric(vertical: 4),
+                                                                    child: Row(
+                                                                      children: [
+                                                                        const Icon(Icons.person, color: Colors.red, size: 18),
+                                                                        const SizedBox(width: 8),
+                                                                        Expanded(
+                                                                          child: Text(
+                                                                            name,
+                                                                            style: const TextStyle(
+                                                                              color: Colors.white,
+                                                                              fontSize: 14,
+                                                                              fontWeight: FontWeight.w500,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  )).toList(),
+                                                                ),
+                                                              ),
+                                                              const SizedBox(height: 16),
+                                                              // Information box
+                                                              Container(
+                                                                padding: const EdgeInsets.all(16),
+                                                                decoration: BoxDecoration(
+                                                                  color: Colors.orange.withOpacity(0.1),
+                                                                  borderRadius: BorderRadius.circular(12),
+                                                                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                                                                ),
+                                                                child: const Row(
+                                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                                  children: [
+                                                                    Icon(Icons.info, color: Colors.orange, size: 20),
+                                                                    SizedBox(width: 12),
+                                                                    Expanded(
+                                                                      child: Column(
+                                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                                        children: [
+                                                                          Text(
+                                                                            'What to do next:',
+                                                                            style: TextStyle(
+                                                                              color: Colors.orange,
+                                                                              fontSize: 14,
+                                                                              fontWeight: FontWeight.bold,
+                                                                            ),
+                                                                          ),
+                                                                          SizedBox(height: 8),
+                                                                          Text(
+                                                                            '• Select different drivers who are available at this time\n'
+                                                                            '• Reschedule this trip to a different time\n'
+                                                                            '• Check the drivers\' schedules in the History tab',
+                                                                            style: TextStyle(
+                                                                              color: Colors.orange,
+                                                                              fontSize: 12,
+                                                                              height: 1.4,
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      // Actions
+                                                      Container(
+                                                        padding: const EdgeInsets.all(20),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.grey.withOpacity(0.05),
+                                                          borderRadius: const BorderRadius.only(
+                                                            bottomLeft: Radius.circular(16),
+                                                            bottomRight: Radius.circular(16),
+                                                          ),
+                                                        ),
+                                                        child: Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child: OutlinedButton(
+                                                                onPressed: () => Navigator.of(context).pop(),
+                                                                style: OutlinedButton.styleFrom(
+                                                                  side: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                                                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                                                  shape: RoundedRectangleBorder(
+                                                                    borderRadius: BorderRadius.circular(8),
+                                                                  ),
+                                                                ),
+                                                                child: const Text(
+                                                                  'Cancel',
+                                                                  style: TextStyle(color: Colors.grey),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            const SizedBox(width: 12),
+                                                            Expanded(
+                                                              child: ElevatedButton(
+                                                                onPressed: () {
+                                                                  Navigator.of(context).pop();
+                                                                  // Optionally refresh driver list or show available drivers
+                                                                },
+                                                                style: ElevatedButton.styleFrom(
+                                                                  backgroundColor: Colors.blue,
+                                                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                                                  shape: RoundedRectangleBorder(
+                                                                    borderRadius: BorderRadius.circular(8),
+                                                                  ),
+                                                                ),
+                                                                child: const Text(
+                                                                  'Select Different Drivers',
+                                                                  style: TextStyle(color: Colors.white),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
                                               ),
                                             );
                                           }
@@ -3009,7 +3453,7 @@ class _TripsPageState extends State<TripsPage> {
       final duration = estimatedDuration ?? const Duration(hours: 4);
       final newTripEnd = newTripStart.add(duration);
 
-      final bufferTime = const Duration(minutes: 30);
+      const bufferTime = Duration(minutes: 30);
       final conflictStart = newTripStart.subtract(bufferTime);
       final conflictEnd = newTripEnd.add(bufferTime);
 

@@ -180,13 +180,13 @@ class LocationService {
 
           // Wait between attempts (except for the last one)
           if (attempt < maxAttempts) {
-            await Future.delayed(Duration(seconds: 2));
+            await Future.delayed(const Duration(seconds: 2));
           }
         } catch (attemptError) {
           print('⚠️ Attempt $attempt failed: $attemptError');
           if (attempt == maxAttempts) {
             // This was the last attempt, re-throw the error
-            throw attemptError;
+            rethrow;
           }
         }
       }
@@ -290,10 +290,30 @@ class LocationService {
       final locationString = prefs.getString('last_known_location');
       if (locationString != null) {
         final locationMap = json.decode(locationString);
+        
+        // Safe conversion helper for numeric values
+        double? _safeToDouble(dynamic value) {
+          if (value == null) return null;
+          if (value is double) return value;
+          if (value is int) return value.toDouble();
+          if (value is String) return double.tryParse(value);
+          return null;
+        }
+        
+        // Validate that we have valid coordinates
+        final latitude = _safeToDouble(locationMap['latitude']);
+        final longitude = _safeToDouble(locationMap['longitude']);
+        
+        if (latitude == null || longitude == null) {
+          print('❌ Invalid cached location data - clearing cache');
+          await prefs.remove('last_known_location');
+          return null;
+        }
+        
         return location_pkg.LocationData.fromMap({
-          'latitude': locationMap['latitude'],
-          'longitude': locationMap['longitude'],
-          'accuracy': locationMap['accuracy'],
+          'latitude': latitude,
+          'longitude': longitude,
+          'accuracy': _safeToDouble(locationMap['accuracy']),
           'time': locationMap['timestamp'],
           'altitude': 0.0,
           'speed': 0.0,
@@ -310,6 +330,14 @@ class LocationService {
       }
     } catch (e) {
       print('❌ Error getting last known location: $e');
+      // Clear potentially corrupted cache data
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('last_known_location');
+        print('🧹 Cleared corrupted location cache');
+      } catch (clearError) {
+        print('❌ Error clearing location cache: $clearError');
+      }
     }
     return null;
   }
@@ -692,6 +720,17 @@ class LocationService {
     } catch (e) {
       print('❌ Error getting current location safely: $e');
       return null;
+    }
+  }
+
+  /// Clear location cache to resolve type casting issues
+  Future<void> clearLocationCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('last_known_location');
+      print('🧹 Location cache cleared successfully');
+    } catch (e) {
+      print('❌ Error clearing location cache: $e');
     }
   }
 }

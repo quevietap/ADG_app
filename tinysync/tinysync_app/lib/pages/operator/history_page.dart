@@ -28,6 +28,7 @@ class _HistoryPageState extends State<HistoryPage>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _fetchData();
+    _cleanupExpiredTrips(); // Auto-cleanup on page load
   }
 
   @override
@@ -45,51 +46,49 @@ class _HistoryPageState extends State<HistoryPage>
     }
 
     try {
+      // Run cleanup before fetching data (but only occasionally to avoid spam)
+      if (DateTime.now().minute % 30 == 0) { // Run cleanup every 30 minutes to reduce load
+        _cleanupExpiredTrips();
+      }
+      
       await _fetchSessions();
 
-      try {
-        final completedResponse = await Supabase.instance.client
+      // Fetch all trip data in parallel for better performance
+      final futures = await Future.wait([
+        // Completed trips
+        Supabase.instance.client
             .from('trips')
             .select(
                 '*, driver:users!trips_driver_id_fkey(*), sub_driver:users!trips_sub_driver_id_fkey(*), vehicles(*)')
             .eq('status', 'completed')
-            .not('operator_confirmed_at', 'is',
-                null) // Only trips confirmed by operator
-            .order('end_time', ascending: false);
-        _completedTrips = List<Map<String, dynamic>>.from(completedResponse);
-        print('✅ Completed trips fetched: ${_completedTrips.length}');
-      } catch (e) {
-        print('❌ Error fetching completed trips: $e');
-        _completedTrips = [];
-      }
-
-      try {
-        final canceledResponse = await Supabase.instance.client
+            .not('operator_confirmed_at', 'is', null)
+            .order('end_time', ascending: false)
+            .limit(50), // Limit to recent 50 trips for better performance
+        
+        // Canceled trips
+        Supabase.instance.client
             .from('trips')
             .select(
                 '*, driver:users!trips_driver_id_fkey(*), sub_driver:users!trips_sub_driver_id_fkey(*), vehicles(*), scheduled_deletion, canceled_at')
             .eq('status', 'cancelled')
-            .order('canceled_at', ascending: false);
-        _canceledTrips = List<Map<String, dynamic>>.from(canceledResponse);
-        print('✅ Canceled trips fetched: ${_canceledTrips.length}');
-      } catch (e) {
-        print('❌ Error fetching canceled trips: $e');
-        _canceledTrips = [];
-      }
-
-      try {
-        final deletedResponse = await Supabase.instance.client
+            .order('canceled_at', ascending: false)
+            .limit(50), // Limit to recent 50 trips for better performance
+        
+        // Deleted trips
+        Supabase.instance.client
             .from('trips')
             .select(
                 '*, driver:users!trips_driver_id_fkey(*), sub_driver:users!trips_sub_driver_id_fkey(*), vehicles(*), scheduled_deletion, deleted_at')
             .eq('status', 'deleted')
-            .order('deleted_at', ascending: false);
-        _deletedTrips = List<Map<String, dynamic>>.from(deletedResponse);
-        print('✅ Deleted trips fetched: ${_deletedTrips.length}');
-      } catch (e) {
-        print('❌ Error fetching deleted trips: $e');
-        _deletedTrips = [];
-      }
+            .order('deleted_at', ascending: false)
+            .limit(50), // Limit to recent 50 trips for better performance
+      ]);
+
+      _completedTrips = List<Map<String, dynamic>>.from(futures[0]);
+      _canceledTrips = List<Map<String, dynamic>>.from(futures[1]);
+      _deletedTrips = List<Map<String, dynamic>>.from(futures[2]);
+      
+      print('✅ Trips fetched - Completed: ${_completedTrips.length}, Canceled: ${_canceledTrips.length}, Deleted: ${_deletedTrips.length}');
 
       if (mounted) {
         setState(() {
@@ -122,6 +121,272 @@ class _HistoryPageState extends State<HistoryPage>
     }
   }
 
+  /// Clean up expired cancelled and deleted trips (older than 2 days)
+  Future<void> _cleanupExpiredTrips() async {
+    try {
+      print('🧹 Starting automatic cleanup of expired trips...');
+      
+      final now = DateTime.now();
+      final cutoffDate = now.subtract(const Duration(days: 2));
+      final cutoffDateStr = cutoffDate.toIso8601String();
+      
+      // Get expired cancelled trips
+      final expiredCancelled = await Supabase.instance.client
+          .from('trips')
+          .select('id, trip_ref_number, canceled_at')
+          .eq('status', 'cancelled')
+          .lt('canceled_at', cutoffDateStr);
+      
+      // Get expired deleted trips  
+      final expiredDeleted = await Supabase.instance.client
+          .from('trips')
+          .select('id, trip_ref_number, deleted_at')
+          .eq('status', 'deleted')
+          .lt('deleted_at', cutoffDateStr);
+      
+      final totalExpired = expiredCancelled.length + expiredDeleted.length;
+      
+      if (totalExpired > 0) {
+        print('🗑️ Found $totalExpired expired trips to clean up');
+        
+        // Delete expired cancelled trips (handle foreign key constraints)
+        if (expiredCancelled.isNotEmpty) {
+          final cancelledIds = expiredCancelled.map((trip) => trip['id']).toList();
+          int deletedCount = 0;
+          
+          for (final tripId in cancelledIds) {
+            try {
+              // First, remove any schedule references
+              await Supabase.instance.client
+                  .from('schedules')
+                  .delete()
+                  .eq('trip_id', tripId);
+              
+              // Then delete the trip
+              await Supabase.instance.client
+                  .from('trips')
+                  .delete()
+                  .eq('id', tripId);
+              
+              deletedCount++;
+            } catch (e) {
+              print('⚠️ Could not delete cancelled trip $tripId: $e');
+            }
+          }
+          print('✅ Deleted $deletedCount expired cancelled trips');
+        }
+        
+        // Delete expired deleted trips (handle foreign key constraints)
+        if (expiredDeleted.isNotEmpty) {
+          final deletedIds = expiredDeleted.map((trip) => trip['id']).toList();
+          int deletedCount = 0;
+          
+          for (final tripId in deletedIds) {
+            try {
+              // First, remove any schedule references
+              await Supabase.instance.client
+                  .from('schedules')
+                  .delete()
+                  .eq('trip_id', tripId);
+              
+              // Then delete the trip
+              await Supabase.instance.client
+                  .from('trips')
+                  .delete()
+                  .eq('id', tripId);
+              
+              deletedCount++;
+            } catch (e) {
+              print('⚠️ Could not delete deleted trip $tripId: $e');
+            }
+          }
+          print('✅ Deleted $deletedCount expired deleted trips');
+        }
+        
+        print('🎉 Cleanup completed! Removed $totalExpired expired trips');
+        
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Cleaned up $totalExpired expired trips (older than 2 days)'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+        
+        // Refresh data after cleanup
+        _fetchData();
+      } else {
+        print('✅ No expired trips found for cleanup');
+      }
+    } catch (e) {
+      print('❌ Error during automatic cleanup: $e');
+      // Don't show error to user for automatic cleanup
+    }
+  }
+
+  /// Manual cleanup function for operators
+  Future<void> _manualCleanupExpiredTrips() async {
+    try {
+      print('🧹 Starting manual cleanup of expired trips...');
+      
+      final now = DateTime.now();
+      final cutoffDate = now.subtract(const Duration(days: 2));
+      final cutoffDateStr = cutoffDate.toIso8601String();
+      
+      // Get expired cancelled trips
+      final expiredCancelled = await Supabase.instance.client
+          .from('trips')
+          .select('id, trip_ref_number, canceled_at')
+          .eq('status', 'cancelled')
+          .lt('canceled_at', cutoffDateStr);
+      
+      // Get expired deleted trips  
+      final expiredDeleted = await Supabase.instance.client
+          .from('trips')
+          .select('id, trip_ref_number, deleted_at')
+          .eq('status', 'deleted')
+          .lt('deleted_at', cutoffDateStr);
+      
+      final totalExpired = expiredCancelled.length + expiredDeleted.length;
+      
+      if (totalExpired > 0) {
+        // Show confirmation dialog
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF2C2C2C),
+            title: const Text(
+              'Clean Up Expired Trips',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: Text(
+              'This will permanently delete $totalExpired expired trips (older than 2 days):\n\n'
+              '• ${expiredCancelled.length} cancelled trips\n'
+              '• ${expiredDeleted.length} deleted trips\n\n'
+              'This action cannot be undone. Continue?',
+              style: const TextStyle(color: Colors.grey),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        );
+        
+        if (confirm == true) {
+          int totalDeleted = 0;
+          
+          // Delete expired cancelled trips (handle foreign key constraints)
+          if (expiredCancelled.isNotEmpty) {
+            final cancelledIds = expiredCancelled.map((trip) => trip['id']).toList();
+            int deletedCount = 0;
+            
+            for (final tripId in cancelledIds) {
+              try {
+                // First, remove any schedule references
+                await Supabase.instance.client
+                    .from('schedules')
+                    .delete()
+                    .eq('trip_id', tripId);
+                
+                // Then delete the trip
+                await Supabase.instance.client
+                    .from('trips')
+                    .delete()
+                    .eq('id', tripId);
+                
+                deletedCount++;
+              } catch (e) {
+                print('⚠️ Could not delete cancelled trip $tripId: $e');
+              }
+            }
+            print('✅ Deleted $deletedCount expired cancelled trips');
+            totalDeleted += deletedCount;
+          }
+          
+          // Delete expired deleted trips (handle foreign key constraints)
+          if (expiredDeleted.isNotEmpty) {
+            final deletedIds = expiredDeleted.map((trip) => trip['id']).toList();
+            int deletedCount = 0;
+            
+            for (final tripId in deletedIds) {
+              try {
+                // First, remove any schedule references
+                await Supabase.instance.client
+                    .from('schedules')
+                    .delete()
+                    .eq('trip_id', tripId);
+                
+                // Then delete the trip
+                await Supabase.instance.client
+                    .from('trips')
+                    .delete()
+                    .eq('id', tripId);
+                
+                deletedCount++;
+              } catch (e) {
+                print('⚠️ Could not delete deleted trip $tripId: $e');
+              }
+            }
+            print('✅ Deleted $deletedCount expired deleted trips');
+            totalDeleted += deletedCount;
+          }
+          
+          print('🎉 Manual cleanup completed! Removed $totalDeleted expired trips');
+          
+          // Show success message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Successfully cleaned up $totalDeleted expired trips'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+          
+          // Refresh data after cleanup
+          _fetchData();
+        }
+      } else {
+        // Show info message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No expired trips found for cleanup'),
+              backgroundColor: Colors.blue,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('❌ Error during manual cleanup: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error cleaning up trips: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -141,12 +406,24 @@ class _HistoryPageState extends State<HistoryPage>
                   letterSpacing: 0.5,
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.refresh_rounded, size: 20),
-                onPressed: _fetchData,
-                tooltip: 'Refresh Data',
-                color: Colors.white.withValues(alpha: 0.9),
-                splashRadius: 20,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.cleaning_services_rounded, size: 20),
+                    onPressed: _manualCleanupExpiredTrips,
+                    tooltip: 'Clean Up Expired Trips',
+                    color: Colors.orange.withValues(alpha: 0.9),
+                    splashRadius: 20,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh_rounded, size: 20),
+                    onPressed: _fetchData,
+                    tooltip: 'Refresh Data',
+                    color: Colors.white.withValues(alpha: 0.9),
+                    splashRadius: 20,
+                  ),
+                ],
               ),
             ],
           ),
@@ -580,12 +857,6 @@ class _HistoryPageState extends State<HistoryPage>
                                   'Start Time:',
                                   _formatTripTime(trip['start_time'] ??
                                       trip['started_at'])),
-                              _buildTripInfoRow(
-                                  'Arrival Time:',
-                                  _formatTripTime(trip['end_time'] ??
-                                      trip['completed_at'])),
-                              _buildTripInfoRow(
-                                  'Duration:', _getTripDuration(trip)),
                             ],
                           ),
                         ),

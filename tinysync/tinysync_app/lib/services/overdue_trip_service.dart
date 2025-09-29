@@ -165,7 +165,7 @@ class OverdueTripService {
         final days = (overdueHours / 24).floor();
         title = '🚨 Trip Overdue';
         message = 'Trip overdue: ${trip['origin']} → ${trip['destination']}. '
-            'Scheduled to end ${days} day${days > 1 ? 's' : ''} ago, '
+            'Scheduled to end $days day${days > 1 ? 's' : ''} ago, '
             'please update status.';
       }
 
@@ -404,7 +404,7 @@ class OverdueTripService {
           '✅ Reminder sent to driver for trip: ${tripResponse['trip_ref_number']}');
     } catch (e) {
       print('❌ Error sending reminder to driver: $e');
-      throw e;
+      rethrow;
     }
   }
 

@@ -250,7 +250,7 @@ class NotificationService {
     required DateTime startTime,
   }) async {
     try {
-      final reminderTime = startTime.subtract(Duration(minutes: 15));
+      final reminderTime = startTime.subtract(const Duration(minutes: 15));
 
       // Only schedule if reminder time is in the future
       if (reminderTime.isAfter(DateTime.now())) {
@@ -277,7 +277,7 @@ class NotificationService {
             print(
                 '⚠️ scheduled_notifications table does not exist - skipping scheduled notification');
           } else {
-            throw dbError;
+            rethrow;
           }
         }
       }
@@ -311,7 +311,7 @@ class NotificationService {
       print('✅ Driver reminder sent');
     } catch (e) {
       print('❌ Error sending driver reminder: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -339,7 +339,7 @@ class NotificationService {
       print('✅ Trip reassignment notification sent');
     } catch (e) {
       print('❌ Error sending reassignment notification: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -365,7 +365,7 @@ class NotificationService {
       print('✅ Trip cancellation notification sent');
     } catch (e) {
       print('❌ Error sending cancellation notification: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -422,7 +422,7 @@ class NotificationService {
     print('🕒 Starting overdue trip tracking...');
 
     // Check for overdue trips every 5 minutes
-    Timer.periodic(Duration(minutes: 5), (timer) {
+    Timer.periodic(const Duration(minutes: 5), (timer) {
       _checkOverdueTrips();
     });
 
@@ -535,7 +535,7 @@ class NotificationService {
   /// Check if we've sent a recent overdue alert for this trip
   Future<bool> _hasRecentOverdueAlert(String tripId, String overdueType) async {
     try {
-      final oneHourAgo = DateTime.now().subtract(Duration(hours: 1));
+      final oneHourAgo = DateTime.now().subtract(const Duration(hours: 1));
 
       final recentAlerts = await Supabase.instance.client
           .from('operator_notifications')
@@ -840,7 +840,7 @@ class NotificationService {
       try {
         final channel =
             Supabase.instance.client.channel('driver_urgent_reminders');
-        await channel.subscribe();
+        channel.subscribe();
 
         channel.sendBroadcastMessage(
           event: 'urgent_trip_reminder',
@@ -881,7 +881,7 @@ class NotificationService {
       print('🎯 ENHANCED DRIVER REMINDER: Multi-channel delivery completed');
     } catch (e) {
       print('❌ Error in enhanced driver reminder: $e');
-      throw e;
+      rethrow;
     }
   }
 

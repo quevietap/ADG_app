@@ -25,7 +25,7 @@ class OverdueTripsPage extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.warning_amber_rounded,
                             color: Colors.orange,
                             size: 32,
@@ -73,7 +73,7 @@ class OverdueTripsPage extends StatelessWidget {
                               ),
                               child: Column(
                                 children: [
-                                  Icon(Icons.play_circle_outline,
+                                  const Icon(Icons.play_circle_outline,
                                       color: Colors.yellow, size: 24),
                                   const SizedBox(height: 4),
                                   const Text(
@@ -109,7 +109,7 @@ class OverdueTripsPage extends StatelessWidget {
                               ),
                               child: Column(
                                 children: [
-                                  Icon(Icons.flag_outlined,
+                                  const Icon(Icons.flag_outlined,
                                       color: Colors.orange, size: 24),
                                   const SizedBox(height: 4),
                                   const Text(

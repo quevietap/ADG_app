@@ -551,31 +551,6 @@ class _HistoryPageState extends State<HistoryPage>
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-
-                        // Duration
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.access_time_outlined,
-                              color: Colors.orange,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                trip['duration'] ?? 'N/A',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ],
@@ -618,12 +593,6 @@ class _HistoryPageState extends State<HistoryPage>
                           const SizedBox(height: 12),
                           Text(
                             'Date: ${trip['date'] ?? 'N/A'}',
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 13),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Duration: ${trip['duration'] ?? 'N/A'}',
                             style: const TextStyle(
                                 color: Colors.white, fontSize: 13),
                           ),
@@ -812,15 +781,19 @@ class _HistoryPageState extends State<HistoryPage>
                             const SizedBox(height: 12),
                             ...(trip['ratings'] as List<Map<String, dynamic>>)
                                 .map((rating) {
-                              final operatorName = rating['rated_by_user'] !=
-                                      null
-                                  ? '${rating['rated_by_user']['first_name']} ${rating['rated_by_user']['last_name']}'
-                                  : (rating['metadata']?['operator_name'] ??
-                                      'Unknown Operator');
-                              final operatorId = rating['rated_by_user']
-                                      ?['id'] ??
-                                  rating['metadata']?['operator_id'] ??
-                                  'Unknown';
+                              // Extract operator name with better fallback logic
+                              String operatorName = 'Unknown Operator';
+                              if (rating['rated_by_user'] != null) {
+                                final firstName = rating['rated_by_user']['first_name'] ?? '';
+                                final lastName = rating['rated_by_user']['last_name'] ?? '';
+                                if (firstName.isNotEmpty || lastName.isNotEmpty) {
+                                  operatorName = '${firstName.trim()} ${lastName.trim()}'.trim();
+                                } else {
+                                  operatorName = 'Operator';
+                                }
+                              } else if (rating['metadata']?['operator_name'] != null) {
+                                operatorName = rating['metadata']['operator_name'].toString();
+                              }
 
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 12),
@@ -889,20 +862,13 @@ class _HistoryPageState extends State<HistoryPage>
                                           size: 14,
                                         ),
                                         const SizedBox(width: 4),
-                                        Text(
-                                          'Rated by: $operatorName',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        const Spacer(),
-                                        Text(
-                                          'ID: ${operatorId.toString().substring(0, 8)}...',
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.grey,
-                                            fontFamily: 'monospace',
+                                        Expanded(
+                                          child: Text(
+                                            'Rated by: $operatorName',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -921,7 +887,7 @@ class _HistoryPageState extends State<HistoryPage>
                                   ],
                                 ),
                               );
-                            }).toList(),
+                            }),
                           ],
                         ),
                       ),
@@ -994,12 +960,6 @@ class _HistoryPageState extends State<HistoryPage>
                           const SizedBox(height: 8),
                           Text(
                             'Start Time: ${trip['start_time'] != null ? _formatFullDateTime(trip['start_time']) : 'N/A'}',
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 13),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'End Time: ${trip['end_time'] != null ? _formatFullDateTime(trip['end_time']) : 'N/A'}',
                             style: const TextStyle(
                                 color: Colors.white, fontSize: 13),
                           ),

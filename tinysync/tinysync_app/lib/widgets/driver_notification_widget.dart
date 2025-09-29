@@ -7,9 +7,9 @@ class DriverNotificationWidget extends StatefulWidget {
   final String driverId;
 
   const DriverNotificationWidget({
-    Key? key,
+    super.key,
     required this.driverId,
-  }) : super(key: key);
+  });
 
   @override
   State<DriverNotificationWidget> createState() =>
@@ -329,9 +329,9 @@ class _DriverNotificationWidgetState extends State<DriverNotificationWidget> {
                         size: 20,
                       ),
                       const SizedBox(width: 8),
-                      Text(
+                      const Text(
                         'Notifications',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,

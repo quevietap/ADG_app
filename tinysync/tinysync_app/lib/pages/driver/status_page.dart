@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -3508,7 +3507,7 @@ class _StatusPageState extends State<StatusPage>
 
         if (attempt < 3) {
           _showErrorSnackBar('GPS attempt $attempt failed, trying again...');
-          await Future.delayed(Duration(seconds: 2));
+          await Future.delayed(const Duration(seconds: 2));
         }
       }
 
@@ -5164,7 +5163,7 @@ class _StatusPageState extends State<StatusPage>
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w500,
                 fontSize: 14,
@@ -7019,10 +7018,10 @@ class _StatusPageState extends State<StatusPage>
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Column(
+                  child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'DATA SOURCE IDENTIFICATION',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
@@ -7030,24 +7029,24 @@ class _StatusPageState extends State<StatusPage>
                           color: Colors.blue,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      const Text('IoT Device Data:',
+                      SizedBox(height: 8),
+                      Text('IoT Device Data:',
                           style: TextStyle(fontWeight: FontWeight.bold)),
-                      const Text('  • Real-time drowsiness detection'),
-                      const Text('  • Camera snapshots and AI analysis'),
-                      const Text('  • Behavior logs from Pi5 device'),
-                      const SizedBox(height: 8),
-                      const Text('Flutter App Data:',
+                      Text('  • Real-time drowsiness detection'),
+                      Text('  • Camera snapshots and AI analysis'),
+                      Text('  • Behavior logs from Pi5 device'),
+                      SizedBox(height: 8),
+                      Text('Flutter App Data:',
                           style: TextStyle(fontWeight: FontWeight.bold)),
-                      const Text('  • Manual button actions'),
-                      const Text('  • User interactions and events'),
-                      const Text('  • Local storage and processing'),
-                      const SizedBox(height: 8),
-                      const Text('Supabase Cloud:',
+                      Text('  • Manual button actions'),
+                      Text('  • User interactions and events'),
+                      Text('  • Local storage and processing'),
+                      SizedBox(height: 8),
+                      Text('Supabase Cloud:',
                           style: TextStyle(fontWeight: FontWeight.bold)),
-                      const Text('  • Final destination for all data'),
-                      const Text('  • IoT data + Flutter data combined'),
-                      const Text('  • Cloud database storage'),
+                      Text('  • Final destination for all data'),
+                      Text('  • IoT data + Flutter data combined'),
+                      Text('  • Cloud database storage'),
                     ],
                   ),
                 ),
@@ -8025,7 +8024,7 @@ class _StatusPageState extends State<StatusPage>
 
   //  SEPARATED: Manual sync status variables (for button UI)
   bool _isManualSyncInProgress = false;
-  String _lastManualSyncStatus = '';
+  final String _lastManualSyncStatus = '';
   int _manualSyncProgress = 0;
   int _manualSyncTotal = 0;
   String _manualSyncCurrentAction = '';
@@ -8033,7 +8032,7 @@ class _StatusPageState extends State<StatusPage>
   //  SEPARATED: Auto-sync status variables (for background sync)
   bool _isAutoSyncInProgress = false;
   //  LEGACY: Variables for backward compatibility (will be removed)
-  int _syncTotal = 0;
+  final int _syncTotal = 0;
   String _syncCurrentAction = '';
   String _lastSyncStatus = '';
 

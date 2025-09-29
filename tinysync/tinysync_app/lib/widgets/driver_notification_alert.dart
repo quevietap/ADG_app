@@ -162,8 +162,23 @@ class _DriverNotificationAlertState extends State<DriverNotificationAlert> {
         }
       }
 
-      // Refresh notifications (real-time will also update)
-      await _loadNotifications();
+      // Immediately update the UI state to reflect the changes
+      if (mounted) {
+        setState(() {
+          // Mark all notifications as read in the current state
+          for (var notification in _notifications) {
+            notification['is_read'] = true;
+          }
+          for (var notification in _filteredNotifications) {
+            notification['is_read'] = true;
+          }
+          _hasUnread = false;
+          _isLoading = false;
+        });
+      }
+
+      // Refresh notifications in the background (real-time will also update)
+      _loadNotifications();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -200,16 +215,42 @@ class _DriverNotificationAlertState extends State<DriverNotificationAlert> {
       // Mark in tracking service as well
       await _notificationTracker.markNotificationAsShown(notificationId);
 
-      _loadNotifications(); // Refresh list
+      // Immediately update the UI state to reflect the change
+      if (mounted) {
+        setState(() {
+          // Find and update the notification in both lists
+          for (var notification in _notifications) {
+            if (notification['id'] == notificationId) {
+              notification['is_read'] = true;
+              break;
+            }
+          }
+          for (var notification in _filteredNotifications) {
+            if (notification['id'] == notificationId) {
+              notification['is_read'] = true;
+              break;
+            }
+          }
+          // Update the unread status
+          _hasUnread = _filteredNotifications.any((n) => !n['is_read']);
+        });
+      }
+
+      // Refresh list in the background
+      _loadNotifications();
     } catch (e) {
       print('❌ Error marking notification as read: $e');
     }
   }
 
-  /// Clean up old notifications from database
+  /// Clean up old notifications from database and local storage
   Future<void> _cleanupOldNotifications() async {
     try {
       print('🧹 Cleaning up old notifications...');
+      
+      // First, clear the local notification tracking service
+      await _notificationTracker.clearNotificationHistory();
+      print('🧹 Cleared local notification tracking history');
       
       // Get all notifications for this driver
       final allNotifications = await Supabase.instance.client
@@ -220,10 +261,9 @@ class _DriverNotificationAlertState extends State<DriverNotificationAlert> {
       
       print('📊 Found ${allNotifications.length} total notifications');
       
-      // Clean up old notifications
+      // Clean up old notifications - more aggressive cleanup
       final now = DateTime.now();
-      final cutoffTime = now.subtract(const Duration(hours: 24)); // 24 hours ago
-      final readCutoffTime = now.subtract(const Duration(hours: 2)); // 2 hours ago for read notifications
+      final cutoffTime = now.subtract(const Duration(hours: 1)); // 1 hour ago for unread
       
       final notificationsToDelete = <String>[];
       
@@ -235,12 +275,10 @@ class _DriverNotificationAlertState extends State<DriverNotificationAlert> {
         bool shouldDelete = false;
         
         if (isRead) {
-          // Delete read notifications older than 2 hours
-          if (createdAt.isBefore(readCutoffTime)) {
-            shouldDelete = true;
-          }
+          // Delete ALL read notifications (more aggressive cleanup)
+          shouldDelete = true;
         } else {
-          // Delete unread notifications older than 24 hours
+          // Delete unread notifications older than 1 hour
           if (createdAt.isBefore(cutoffTime)) {
             shouldDelete = true;
           }
@@ -297,7 +335,17 @@ class _DriverNotificationAlertState extends State<DriverNotificationAlert> {
         }
       }
       
-      // Refresh notifications after cleanup
+      // Immediately update the UI state to reflect the cleanup
+      if (mounted) {
+        setState(() {
+          // Clear all notifications from the current state since they were deleted
+          _notifications.clear();
+          _filteredNotifications.clear();
+          _hasUnread = false;
+        });
+      }
+
+      // Refresh notifications in the background to get any remaining notifications
       _loadNotifications();
       
     } catch (e) {
@@ -341,97 +389,166 @@ class _DriverNotificationAlertState extends State<DriverNotificationAlert> {
             ),
 
             // Header
-            Padding(
-              padding: EdgeInsets.all(16),
-              child: Row(
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.blue.withOpacity(0.1),
+                    Colors.blue.withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Column(
                 children: [
-                  Icon(Icons.notifications, color: Colors.blue),
-                  SizedBox(width: 8),
-                  Text(
-                    'Your Notifications',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Spacer(),
-                  // Cleanup button
-                  GestureDetector(
-                    onTap: () async {
-                      await _cleanupOldNotifications();
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.orange.withOpacity(0.3),
-                          width: 1,
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.notifications_active,
+                          color: Colors.blue,
+                          size: 24,
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.cleaning_services,
-                            size: 14,
-                            color: Colors.orange,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Cleanup',
-                            style: TextStyle(
-                              color: Colors.orange,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Your Notifications',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                        ],
+                            if (_notifications.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                '${_notifications.where((n) => !n['is_read']).length} unread • ${_notifications.length} total',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
                   if (_notifications.isNotEmpty) ...[
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    const SizedBox(height: 16),
+                    Row(
                       children: [
-                        Text(
-                          '${_notifications.where((n) => !n['is_read']).length} unread of ${_notifications.length}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        if (_hasUnread) ...[
-                          const SizedBox(height: 4),
-                          TextButton(
-                            onPressed: _isLoading ? null : _markAllAsRead,
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 12,
-                                    height: 12,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.blue),
-                                    ),
-                                  )
-                                : const Text(
-                                    'Mark all as read',
+                        // Cleanup button
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () async {
+                              await _cleanupOldNotifications();
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.orange.withOpacity(0.2),
+                                    Colors.orange.withOpacity(0.1),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.orange.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.cleaning_services,
+                                    size: 18,
+                                    color: Colors.orange,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Cleanup Old',
                                     style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.blue,
+                                      color: Colors.orange,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ],
+                        ),
+                        const SizedBox(width: 12),
+                        // Mark all as read button
+                        if (_hasUnread)
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: _isLoading ? null : _markAllAsRead,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.blue.withOpacity(0.2),
+                                      Colors.blue.withOpacity(0.1),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.blue.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (_isLoading)
+                                      const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                        ),
+                                      )
+                                    else
+                                      const Icon(
+                                        Icons.done_all,
+                                        size: 18,
+                                        color: Colors.blue,
+                                      ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _isLoading ? 'Processing...' : 'Mark All Read',
+                                      style: const TextStyle(
+                                        color: Colors.blue,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ],
@@ -487,109 +604,257 @@ class _DriverNotificationAlertState extends State<DriverNotificationAlert> {
     final isRead = notification['is_read'] ?? false;
 
     Color priorityColor = Colors.blue;
-    IconData priorityIcon = Icons.info;
+    Color bgColor = const Color(0xFF2C3E50);
+    IconData priorityIcon = Icons.info_outline;
+    String priorityText = 'INFO';
 
     if (priority == 'high') {
       priorityColor = Colors.red;
-      priorityIcon = Icons.warning;
+      bgColor = const Color(0xFF2C1818);
+      priorityIcon = Icons.warning_amber_rounded;
+      priorityText = 'URGENT';
     } else if (priority == 'medium') {
       priorityColor = Colors.orange;
-      priorityIcon = Icons.schedule;
+      bgColor = const Color(0xFF2C2318);
+      priorityIcon = Icons.schedule_rounded;
+      priorityText = 'REMINDER';
     }
 
     // Adjust opacity for read notifications
     if (isRead) {
-      priorityColor = priorityColor.withOpacity(0.6);
+      priorityColor = priorityColor.withOpacity(0.5);
+      bgColor = const Color(0xFF1A1A1A);
     }
 
-    return Card(
-      margin: EdgeInsets.only(bottom: 12),
-      color: isRead ? Colors.grey[50] : null,
-      child: InkWell(
-        onTap: isRead ? null : () => _markAsRead(notification['id']),
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(priorityIcon, color: priorityColor, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: isRead ? FontWeight.w400 : FontWeight.w600,
-                        color: priorityColor,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isRead 
+            ? Colors.grey.withOpacity(0.1)
+            : priorityColor.withOpacity(0.3),
+          width: 1.5,
+        ),
+        boxShadow: [
+          if (!isRead)
+            BoxShadow(
+              color: priorityColor.withOpacity(0.1),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: isRead ? null : () => _markAsRead(notification['id']),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with icon, title, and priority badge
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: priorityColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: priorityColor.withOpacity(0.3),
+                          width: 1,
+                        ),
                       ),
+                      child: Icon(
+                        priorityIcon,
+                        color: priorityColor,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  title,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
+                                    color: isRead ? Colors.grey[500] : Colors.white,
+                                    letterSpacing: 0.2,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (priority == 'high' && !isRead) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    priorityText,
+                                    style: const TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          if (createdAt != null) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.access_time_rounded,
+                                  size: 13,
+                                  color: Colors.grey[600],
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatTime(createdAt),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Message content
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.05),
+                      width: 1,
                     ),
                   ),
-                  if (priority == 'high' && !isRead)
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.red, width: 1),
-                      ),
-                      child: Text(
-                        'URGENT',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red,
-                        ),
-                      ),
+                  child: Text(
+                    message,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isRead ? Colors.grey[600] : Colors.grey[300],
+                      height: 1.5,
+                      letterSpacing: 0.1,
                     ),
-                ],
-              ),
-              SizedBox(height: 8),
-              Text(
-                message,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isRead ? Colors.grey[500] : Colors.grey[700],
+                  ),
                 ),
-              ),
-              if (createdAt != null) ...[
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
+                // Footer with action
                 Row(
                   children: [
-                    Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
-                    SizedBox(width: 4),
-                    Text(
-                      _formatTime(createdAt),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
+                    if (!isRead) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.blue.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.touch_app_rounded,
+                              size: 14,
+                              color: Colors.blue,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Tap to dismiss',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.green.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              size: 14,
+                              color: Colors.green,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Read',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const Spacer(),
+                    // Priority indicator
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: priorityColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        priorityText,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: priorityColor,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                    Spacer(),
-                    if (isRead)
-                      Text(
-                        'Read',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[400],
-                          fontStyle: FontStyle.italic,
-                        ),
-                      )
-                    else
-                      Text(
-                        'Tap to dismiss',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
                   ],
                 ),
               ],
-            ],
+            ),
           ),
         ),
       ),

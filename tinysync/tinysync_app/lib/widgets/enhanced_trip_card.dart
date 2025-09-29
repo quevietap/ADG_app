@@ -494,7 +494,7 @@ class _EnhancedTripCardState extends State<EnhancedTripCard> {
         );
 
         print(
-            '📍 Driver location update: $lat, $lng at ${_lastLocationUpdate}');
+            '📍 Driver location update: $lat, $lng at $_lastLocationUpdate');
       }
     } catch (e) {
       print('❌ Error handling driver location update: $e');
@@ -527,7 +527,7 @@ class _EnhancedTripCardState extends State<EnhancedTripCard> {
           });
 
           print(
-              '✅ FRESH DRIVER LOCATION LOADED: $lat, $lng at ${_lastLocationUpdate}');
+              '✅ FRESH DRIVER LOCATION LOADED: $lat, $lng at $_lastLocationUpdate');
           print('📱 This is the DRIVER\'S location, NOT the operator\'s');
         }
       } else {
@@ -2154,11 +2154,15 @@ class _EnhancedTripCardState extends State<EnhancedTripCard> {
     );
   }
 
-  bool _isTripCompleted() {
+  // Check if trip has started (should hide cancel/delete buttons)
+  bool _hasTripStarted() {
     final status = _getTripStatus();
-    // Trip is only truly completed when operator has confirmed it
-    return status == 'completed' &&
-        widget.trip['operator_confirmed_at'] != null;
+    // Trip has started if it's in_progress, driver_completed, or completed
+    return status == 'in_progress' || 
+           status == 'driver_completed' || 
+           status == 'completed' ||
+           status == 'cancelled' ||
+           status == 'archived';
   }
 
   // Check if trip needs operator confirmation
@@ -2320,9 +2324,9 @@ class _EnhancedTripCardState extends State<EnhancedTripCard> {
                             size: 16,
                           ),
                           const SizedBox(width: 8),
-                          Text(
+                          const Text(
                             'Trip Progress',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors
                                   .blue, // Always blue instead of dynamic status color
                               fontWeight: FontWeight.bold,
@@ -2345,7 +2349,7 @@ class _EnhancedTripCardState extends State<EnhancedTripCard> {
                       LinearProgressIndicator(
                         value: _getProgressPercentage() / 100,
                         backgroundColor: Colors.grey.withOpacity(0.3),
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors
+                        valueColor: const AlwaysStoppedAnimation<Color>(Colors
                             .blue), // Always blue instead of dynamic status color
                       ),
                     ],
@@ -3109,7 +3113,8 @@ class _EnhancedTripCardState extends State<EnhancedTripCard> {
                   ],
 
                   // Cancel & Delete Actions for All Trips (Operator Only)
-                  if (widget.isOperator && !_isTripCompleted()) ...[
+                  // Only show cancel/delete buttons for trips that haven't started yet
+                  if (widget.isOperator && !_hasTripStarted()) ...[
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.all(16),

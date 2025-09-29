@@ -124,8 +124,17 @@ class RealtimeTrackingService {
 
       final newRecord = payload.newRecord;
 
-      final latitude = newRecord['latitude'] as double?;
-      final longitude = newRecord['longitude'] as double?;
+      // Safe conversion helper for numeric values from Supabase
+      double? _safeToDouble(dynamic value) {
+        if (value == null) return null;
+        if (value is double) return value;
+        if (value is int) return value.toDouble();
+        if (value is String) return double.tryParse(value);
+        return null;
+      }
+
+      final latitude = _safeToDouble(newRecord['latitude']);
+      final longitude = _safeToDouble(newRecord['longitude']);
       final locationType = newRecord['location_type'] as String?;
       final timestamp = newRecord['timestamp'] as String?;
 
@@ -162,9 +171,18 @@ class RealtimeTrackingService {
 
       final newRecord = payload.newRecord;
 
+      // Safe conversion helper for numeric values from Supabase
+      double? _safeToDouble(dynamic value) {
+        if (value == null) return null;
+        if (value is double) return value;
+        if (value is int) return value.toDouble();
+        if (value is String) return double.tryParse(value);
+        return null;
+      }
+
       final status = newRecord['status'] as String?;
-      final currentLat = newRecord['current_latitude'] as double?;
-      final currentLng = newRecord['current_longitude'] as double?;
+      final currentLat = _safeToDouble(newRecord['current_latitude']);
+      final currentLng = _safeToDouble(newRecord['current_longitude']);
 
       if (currentLat != null && currentLng != null) {
         _currentLocations[tripId] = LatLng(currentLat, currentLng);
@@ -221,10 +239,19 @@ class RealtimeTrackingService {
       final response = await Supabase.instance.client
           .rpc('get_trip_path', params: {'trip_uuid': tripId});
 
+      // Safe conversion helper for numeric values from Supabase
+      double? _safeToDouble(dynamic value) {
+        if (value == null) return null;
+        if (value is double) return value;
+        if (value is int) return value.toDouble();
+        if (value is String) return double.tryParse(value);
+        return null;
+      }
+
       final path = <LatLng>[];
       for (final record in response) {
-        final lat = record['latitude'] as double?;
-        final lng = record['longitude'] as double?;
+        final lat = _safeToDouble(record['latitude']);
+        final lng = _safeToDouble(record['longitude']);
         if (lat != null && lng != null) {
           path.add(LatLng(lat, lng));
         }
@@ -244,10 +271,19 @@ class RealtimeTrackingService {
             .eq('trip_id', tripId)
             .order('timestamp');
 
+        // Safe conversion helper for numeric values from Supabase
+        double? _safeToDouble(dynamic value) {
+          if (value == null) return null;
+          if (value is double) return value;
+          if (value is int) return value.toDouble();
+          if (value is String) return double.tryParse(value);
+          return null;
+        }
+
         final path = <LatLng>[];
         for (final record in response) {
-          final lat = record['latitude'] as double?;
-          final lng = record['longitude'] as double?;
+          final lat = _safeToDouble(record['latitude']);
+          final lng = _safeToDouble(record['longitude']);
           if (lat != null && lng != null) {
             path.add(LatLng(lat, lng));
           }
