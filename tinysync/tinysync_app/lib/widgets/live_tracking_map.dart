@@ -113,9 +113,18 @@ class _LiveTrackingMapState extends State<LiveTrackingMap> {
   /// Handle real-time location updates
   void _handleLiveLocationUpdate(Map<String, dynamic> locationData) {
     try {
-      final lat = locationData['latitude'] as double?;
-      final lng = locationData['longitude'] as double?;
-      final speed = locationData['speed'] as double?;
+      // Safe conversion helper for numeric values
+      double? _safeToDouble(dynamic value) {
+        if (value == null) return null;
+        if (value is double) return value;
+        if (value is int) return value.toDouble();
+        if (value is String) return double.tryParse(value);
+        return null;
+      }
+
+      final lat = _safeToDouble(locationData['latitude']);
+      final lng = _safeToDouble(locationData['longitude']);
+      final speed = _safeToDouble(locationData['speed']);
       final timestamp = locationData['timestamp'] as String?;
 
       if (lat != null && lng != null) {

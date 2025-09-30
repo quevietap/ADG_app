@@ -694,9 +694,18 @@ class _BeautifulLiveTrackingMapState extends State<BeautifulLiveTrackingMap>
     if (!mounted || !widget.isOperatorView) return;
 
     try {
-      final lat = locationRecord['latitude'] as double?;
-      final lng = locationRecord['longitude'] as double?;
-      final speed = locationRecord['speed'] as double?;
+      // Safe conversion helper for numeric values from database
+      double? _safeToDouble(dynamic value) {
+        if (value == null) return null;
+        if (value is double) return value;
+        if (value is int) return value.toDouble();
+        if (value is String) return double.tryParse(value);
+        return null;
+      }
+
+      final lat = _safeToDouble(locationRecord['latitude']);
+      final lng = _safeToDouble(locationRecord['longitude']);
+      final speed = _safeToDouble(locationRecord['speed']);
       final tripId = locationRecord['trip_id'] as String?;
 
       // Only process if it's for the current trip (if trip is specified)

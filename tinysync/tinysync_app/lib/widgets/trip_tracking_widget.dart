@@ -92,8 +92,18 @@ class _TripTrackingWidgetState extends State<TripTrackingWidget> {
   void _handleLocationUpdate(PostgresChangePayload payload) {
     try {
       final data = payload.newRecord;
-      final lat = data['latitude'] as double?;
-      final lng = data['longitude'] as double?;
+      
+      // Safe conversion helper for numeric values
+      double? _safeToDouble(dynamic value) {
+        if (value == null) return null;
+        if (value is double) return value;
+        if (value is int) return value.toDouble();
+        if (value is String) return double.tryParse(value);
+        return null;
+      }
+
+      final lat = _safeToDouble(data['latitude']);
+      final lng = _safeToDouble(data['longitude']);
 
       if (lat != null && lng != null) {
         setState(() {
@@ -115,8 +125,6 @@ class _TripTrackingWidgetState extends State<TripTrackingWidget> {
 
   Future<void> _loadTripPath() async {
     try {
-      final tripId = widget.trip['id'];
-
       // For now, skip loading trip locations since the table doesn't exist
       // TODO: Create trip_locations table or use alternative location tracking
       print('⚠️ Trip locations table not available - skipping path loading');

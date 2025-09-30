@@ -132,7 +132,7 @@ class LocationService {
 
   /// Get current location with enhanced accuracy
   Future<location_pkg.LocationData?> getCurrentLocation({
-    int maxAttempts = 1,
+    int maxAttempts = 3,
     double requiredAccuracy = 50.0,
   }) async {
     try {
@@ -150,7 +150,7 @@ class LocationService {
               '📍 Getting current location (attempt $attempt/$maxAttempts)...');
 
           // Try to get location with progressively longer timeouts
-          final timeoutSeconds = 5 + (attempt * 2);
+          final timeoutSeconds = 10 + (attempt * 3);
           location_pkg.LocationData locationData =
               await _location.getLocation().timeout(
             Duration(seconds: timeoutSeconds),
@@ -731,6 +731,18 @@ class LocationService {
       print('🧹 Location cache cleared successfully');
     } catch (e) {
       print('❌ Error clearing location cache: $e');
+    }
+  }
+
+  /// Initialize location service with cache clearing to fix type casting issues
+  Future<bool> initializeWithCacheClear() async {
+    try {
+      print('🧹 Clearing location cache to fix type casting issues...');
+      await clearLocationCache();
+      return await initialize();
+    } catch (e) {
+      print('❌ Error initializing with cache clear: $e');
+      return false;
     }
   }
 }

@@ -451,8 +451,17 @@ class _EnhancedTripCardState extends State<EnhancedTripCard> {
     try {
       final data = payload['payload'];
       if (data != null) {
-        final lat = data['latitude'] as double?;
-        final lng = data['longitude'] as double?;
+        // Safe conversion helper for numeric values
+        double? _safeToDouble(dynamic value) {
+          if (value == null) return null;
+          if (value is double) return value;
+          if (value is int) return value.toDouble();
+          if (value is String) return double.tryParse(value);
+          return null;
+        }
+
+        final lat = _safeToDouble(data['latitude']);
+        final lng = _safeToDouble(data['longitude']);
         
         if (lat != null && lng != null) {
           setState(() {
@@ -475,8 +484,17 @@ class _EnhancedTripCardState extends State<EnhancedTripCard> {
   /// Handle driver location updates for operator view
   void _handleDriverLocationUpdate(Map<String, dynamic> locationData) {
     try {
-      final lat = locationData['latitude'] as double?;
-      final lng = locationData['longitude'] as double?;
+      // Safe conversion helper for numeric values
+      double? _safeToDouble(dynamic value) {
+        if (value == null) return null;
+        if (value is double) return value;
+        if (value is int) return value.toDouble();
+        if (value is String) return double.tryParse(value);
+        return null;
+      }
+
+      final lat = _safeToDouble(locationData['latitude']);
+      final lng = _safeToDouble(locationData['longitude']);
       final timestamp = locationData['timestamp'] as String?;
 
       if (lat != null && lng != null) {
@@ -513,8 +531,17 @@ class _EnhancedTripCardState extends State<EnhancedTripCard> {
           .forceRefreshDriverLocationForTrip(tripId);
 
       if (driverLocation != null) {
-        final lat = driverLocation['latitude'] as double?;
-        final lng = driverLocation['longitude'] as double?;
+        // Safe conversion helper for numeric values
+        double? _safeToDouble(dynamic value) {
+          if (value == null) return null;
+          if (value is double) return value;
+          if (value is int) return value.toDouble();
+          if (value is String) return double.tryParse(value);
+          return null;
+        }
+
+        final lat = _safeToDouble(driverLocation['latitude']);
+        final lng = _safeToDouble(driverLocation['longitude']);
         final timestamp = driverLocation['timestamp'] as String?;
 
         if (lat != null && lng != null) {
@@ -554,12 +581,23 @@ class _EnhancedTripCardState extends State<EnhancedTripCard> {
           .order('timestamp');
 
       setState(() {
+        // Safe conversion helper for numeric values
+        double? _safeToDouble(dynamic value) {
+          if (value == null) return null;
+          if (value is double) return value;
+          if (value is int) return value.toDouble();
+          if (value is String) return double.tryParse(value);
+          return null;
+        }
+
         _tripPath = (response as List).map((location) {
-          return LatLng(
-            location['latitude'] as double,
-            location['longitude'] as double,
-          );
-        }).toList();
+          final lat = _safeToDouble(location['latitude']);
+          final lng = _safeToDouble(location['longitude']);
+          if (lat != null && lng != null) {
+            return LatLng(lat, lng);
+          }
+          return null;
+        }).where((location) => location != null).cast<LatLng>().toList();
       });
 
       // For operator view, use driver location instead of trip path
