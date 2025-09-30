@@ -869,8 +869,10 @@ class _TripsPageState extends State<TripsPage> {
 
         // Check which drivers are already assigned to this trip
         final alreadyAssignedDriverIds = <String>[];
-        if (trip['driver_id'] != null) alreadyAssignedDriverIds.add(trip['driver_id']);
-        if (trip['sub_driver_id'] != null) alreadyAssignedDriverIds.add(trip['sub_driver_id']);
+        if (trip['driver_id'] != null)
+          alreadyAssignedDriverIds.add(trip['driver_id']);
+        if (trip['sub_driver_id'] != null)
+          alreadyAssignedDriverIds.add(trip['sub_driver_id']);
 
         // Fetch rating data for all drivers
         final ratingData = await _fetchDriverRatings(driverIds);
@@ -881,7 +883,8 @@ class _TripsPageState extends State<TripsPage> {
 
           // Set status based on conflicts and assignments
           driver['is_busy'] = conflictingDriverIds.contains(driverId);
-          driver['is_already_assigned'] = alreadyAssignedDriverIds.contains(driverId);
+          driver['is_already_assigned'] =
+              alreadyAssignedDriverIds.contains(driverId);
 
           // Set rating data
           final ratings = ratingData[driverId];
@@ -1216,7 +1219,9 @@ class _TripsPageState extends State<TripsPage> {
                                                     spacing: 4,
                                                     runSpacing: 2,
                                                     children: [
-                                                      if (driver['is_already_assigned'] == true)
+                                                      if (driver[
+                                                              'is_already_assigned'] ==
+                                                          true)
                                                         Container(
                                                           padding:
                                                               const EdgeInsets
@@ -1242,7 +1247,8 @@ class _TripsPageState extends State<TripsPage> {
                                                           child: const Text(
                                                             'ALREADY ASSIGNED',
                                                             style: TextStyle(
-                                                              color: Colors.blue,
+                                                              color:
+                                                                  Colors.blue,
                                                               fontSize: 9,
                                                               fontWeight:
                                                                   FontWeight
@@ -1373,74 +1379,127 @@ class _TripsPageState extends State<TripsPage> {
                                             'Assigning drivers: $selectedDriverIds to trip ${trip['id']}');
 
                                         // Check if drivers are already assigned to this trip
-                                        final alreadyAssignedDrivers = <String>[];
-                                        if (trip['driver_id'] != null && selectedDriverIds.contains(trip['driver_id'])) {
-                                          alreadyAssignedDrivers.add(trip['driver_id']);
+                                        final alreadyAssignedDrivers =
+                                            <String>[];
+                                        if (trip['driver_id'] != null &&
+                                            selectedDriverIds
+                                                .contains(trip['driver_id'])) {
+                                          alreadyAssignedDrivers
+                                              .add(trip['driver_id']);
                                         }
-                                        if (trip['sub_driver_id'] != null && selectedDriverIds.contains(trip['sub_driver_id'])) {
-                                          alreadyAssignedDrivers.add(trip['sub_driver_id']);
+                                        if (trip['sub_driver_id'] != null &&
+                                            selectedDriverIds.contains(
+                                                trip['sub_driver_id'])) {
+                                          alreadyAssignedDrivers
+                                              .add(trip['sub_driver_id']);
                                         }
 
                                         if (alreadyAssignedDrivers.isNotEmpty) {
                                           // Get already assigned driver names
                                           final assignedDriverNames = drivers
-                                              .where((driver) => alreadyAssignedDrivers.contains(driver['id']))
-                                              .map((driver) => '${driver['first_name']} ${driver['last_name']}')
+                                              .where((driver) =>
+                                                  alreadyAssignedDrivers
+                                                      .contains(driver['id']))
+                                              .map((driver) =>
+                                                  '${driver['first_name']} ${driver['last_name']}')
                                               .toList();
-                                          
+
                                           if (mounted) {
                                             showDialog(
                                               context: context,
                                               barrierDismissible: false,
                                               builder: (context) => Dialog(
-                                                backgroundColor: Colors.transparent,
+                                                backgroundColor:
+                                                    Colors.transparent,
                                                 child: Container(
                                                   constraints: BoxConstraints(
-                                                    maxWidth: MediaQuery.of(context).size.width * 0.9,
-                                                    maxHeight: MediaQuery.of(context).size.height * 0.7,
+                                                    maxWidth:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            0.9,
+                                                    maxHeight:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .height *
+                                                            0.7,
                                                   ),
                                                   decoration: BoxDecoration(
-                                                    color: const Color(0xFF2C2C2C),
-                                                    borderRadius: BorderRadius.circular(16),
+                                                    color:
+                                                        const Color(0xFF2C2C2C),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            16),
                                                     boxShadow: [
                                                       BoxShadow(
-                                                        color: Colors.black.withOpacity(0.3),
+                                                        color: Colors.black
+                                                            .withOpacity(0.3),
                                                         blurRadius: 20,
-                                                        offset: const Offset(0, 10),
+                                                        offset:
+                                                            const Offset(0, 10),
                                                       ),
                                                     ],
                                                   ),
                                                   child: Column(
-                                                    mainAxisSize: MainAxisSize.min,
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
                                                     children: [
                                                       // Header
                                                       Container(
-                                                        padding: const EdgeInsets.all(20),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.blue.withOpacity(0.1),
-                                                          borderRadius: const BorderRadius.only(
-                                                            topLeft: Radius.circular(16),
-                                                            topRight: Radius.circular(16),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(20),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: Colors.blue
+                                                              .withOpacity(0.1),
+                                                          borderRadius:
+                                                              const BorderRadius
+                                                                  .only(
+                                                            topLeft:
+                                                                Radius.circular(
+                                                                    16),
+                                                            topRight:
+                                                                Radius.circular(
+                                                                    16),
                                                           ),
                                                         ),
                                                         child: Row(
                                                           children: [
                                                             Container(
-                                                              padding: const EdgeInsets.all(8),
-                                                              decoration: BoxDecoration(
-                                                                color: Colors.blue.withOpacity(0.2),
-                                                                borderRadius: BorderRadius.circular(8),
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(8),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color: Colors
+                                                                    .blue
+                                                                    .withOpacity(
+                                                                        0.2),
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            8),
                                                               ),
-                                                              child: const Icon(Icons.info, color: Colors.blue, size: 24),
+                                                              child: const Icon(
+                                                                  Icons.info,
+                                                                  color: Colors
+                                                                      .blue,
+                                                                  size: 24),
                                                             ),
-                                                            const SizedBox(width: 12),
+                                                            const SizedBox(
+                                                                width: 12),
                                                             const Expanded(
                                                               child: Text(
                                                                 'Driver Already Assigned',
-                                                                style: TextStyle(
-                                                                  color: Colors.white,
+                                                                style:
+                                                                    TextStyle(
+                                                                  color: Colors
+                                                                      .white,
                                                                   fontSize: 18,
-                                                                  fontWeight: FontWeight.bold,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
                                                                 ),
                                                               ),
                                                             ),
@@ -1449,79 +1508,137 @@ class _TripsPageState extends State<TripsPage> {
                                                       ),
                                                       // Content
                                                       Flexible(
-                                                        child: SingleChildScrollView(
-                                                          padding: const EdgeInsets.all(20),
+                                                        child:
+                                                            SingleChildScrollView(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(20),
                                                           child: Column(
-                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
                                                             children: [
                                                               Text(
                                                                 'The following drivers are already assigned to this trip:',
-                                                                style: TextStyle(
-                                                                  color: Colors.grey[300],
+                                                                style:
+                                                                    TextStyle(
+                                                                  color: Colors
+                                                                          .grey[
+                                                                      300],
                                                                   fontSize: 14,
                                                                 ),
                                                               ),
-                                                              const SizedBox(height: 16),
+                                                              const SizedBox(
+                                                                  height: 16),
                                                               // Assigned drivers list
                                                               Container(
-                                                                padding: const EdgeInsets.all(12),
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors.blue.withOpacity(0.05),
-                                                                  borderRadius: BorderRadius.circular(8),
-                                                                  border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        12),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Colors
+                                                                      .blue
+                                                                      .withOpacity(
+                                                                          0.05),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              8),
+                                                                  border: Border.all(
+                                                                      color: Colors
+                                                                          .blue
+                                                                          .withOpacity(
+                                                                              0.2)),
                                                                 ),
                                                                 child: Column(
-                                                                  children: assignedDriverNames.map((name) => Padding(
-                                                                    padding: const EdgeInsets.symmetric(vertical: 4),
-                                                                    child: Row(
-                                                                      children: [
-                                                                        const Icon(Icons.person, color: Colors.blue, size: 18),
-                                                                        const SizedBox(width: 8),
-                                                                        Expanded(
-                                                                          child: Text(
-                                                                            name,
-                                                                            style: const TextStyle(
-                                                                              color: Colors.white,
-                                                                              fontSize: 14,
-                                                                              fontWeight: FontWeight.w500,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  )).toList(),
+                                                                  children:
+                                                                      assignedDriverNames
+                                                                          .map((name) =>
+                                                                              Padding(
+                                                                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                                                                child: Row(
+                                                                                  children: [
+                                                                                    const Icon(Icons.person, color: Colors.blue, size: 18),
+                                                                                    const SizedBox(width: 8),
+                                                                                    Expanded(
+                                                                                      child: Text(
+                                                                                        name,
+                                                                                        style: const TextStyle(
+                                                                                          color: Colors.white,
+                                                                                          fontSize: 14,
+                                                                                          fontWeight: FontWeight.w500,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                              ))
+                                                                          .toList(),
                                                                 ),
                                                               ),
-                                                              const SizedBox(height: 16),
+                                                              const SizedBox(
+                                                                  height: 16),
                                                               // Information box
                                                               Container(
-                                                                padding: const EdgeInsets.all(16),
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors.green.withOpacity(0.1),
-                                                                  borderRadius: BorderRadius.circular(12),
-                                                                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        16),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Colors
+                                                                      .green
+                                                                      .withOpacity(
+                                                                          0.1),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12),
+                                                                  border: Border.all(
+                                                                      color: Colors
+                                                                          .green
+                                                                          .withOpacity(
+                                                                              0.3)),
                                                                 ),
-                                                                child: const Row(
-                                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                                child:
+                                                                    const Row(
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment
+                                                                          .start,
                                                                   children: [
-                                                                    Icon(Icons.check_circle, color: Colors.green, size: 20),
-                                                                    SizedBox(width: 12),
+                                                                    Icon(
+                                                                        Icons
+                                                                            .check_circle,
+                                                                        color: Colors
+                                                                            .green,
+                                                                        size:
+                                                                            20),
+                                                                    SizedBox(
+                                                                        width:
+                                                                            12),
                                                                     Expanded(
-                                                                      child: Column(
-                                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                                      child:
+                                                                          Column(
+                                                                        crossAxisAlignment:
+                                                                            CrossAxisAlignment.start,
                                                                         children: [
                                                                           Text(
                                                                             'No action needed:',
-                                                                            style: TextStyle(
+                                                                            style:
+                                                                                TextStyle(
                                                                               color: Colors.green,
                                                                               fontSize: 14,
                                                                               fontWeight: FontWeight.bold,
                                                                             ),
                                                                           ),
-                                                                          SizedBox(height: 8),
+                                                                          SizedBox(
+                                                                              height: 8),
                                                                           Text(
                                                                             'These drivers are already properly assigned to this trip. You can proceed with the trip or make other changes as needed.',
-                                                                            style: TextStyle(
+                                                                            style:
+                                                                                TextStyle(
                                                                               color: Colors.green,
                                                                               fontSize: 12,
                                                                               height: 1.4,
@@ -1539,29 +1656,56 @@ class _TripsPageState extends State<TripsPage> {
                                                       ),
                                                       // Actions
                                                       Container(
-                                                        padding: const EdgeInsets.all(20),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.grey.withOpacity(0.05),
-                                                          borderRadius: const BorderRadius.only(
-                                                            bottomLeft: Radius.circular(16),
-                                                            bottomRight: Radius.circular(16),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(20),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: Colors.grey
+                                                              .withOpacity(
+                                                                  0.05),
+                                                          borderRadius:
+                                                              const BorderRadius
+                                                                  .only(
+                                                            bottomLeft:
+                                                                Radius.circular(
+                                                                    16),
+                                                            bottomRight:
+                                                                Radius.circular(
+                                                                    16),
                                                           ),
                                                         ),
                                                         child: Row(
                                                           children: [
                                                             Expanded(
-                                                              child: ElevatedButton(
-                                                                onPressed: () => Navigator.of(context).pop(),
-                                                                style: ElevatedButton.styleFrom(
-                                                                  backgroundColor: Colors.blue,
-                                                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                                                  shape: RoundedRectangleBorder(
-                                                                    borderRadius: BorderRadius.circular(8),
+                                                              child:
+                                                                  ElevatedButton(
+                                                                onPressed: () =>
+                                                                    Navigator.of(
+                                                                            context)
+                                                                        .pop(),
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .blue,
+                                                                  padding: const EdgeInsets
+                                                                      .symmetric(
+                                                                      vertical:
+                                                                          12),
+                                                                  shape:
+                                                                      RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .circular(8),
                                                                   ),
                                                                 ),
-                                                                child: const Text(
+                                                                child:
+                                                                    const Text(
                                                                   'Continue',
-                                                                  style: TextStyle(color: Colors.white),
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .white),
                                                                 ),
                                                               ),
                                                             ),
@@ -1587,148 +1731,265 @@ class _TripsPageState extends State<TripsPage> {
                                         if (conflictingDrivers.isNotEmpty) {
                                           // Get conflicting driver names for better error message
                                           final conflictingDriverNames = drivers
-                                              .where((driver) => conflictingDrivers.contains(driver['id']))
-                                              .map((driver) => '${driver['first_name']} ${driver['last_name']}')
+                                              .where((driver) =>
+                                                  conflictingDrivers
+                                                      .contains(driver['id']))
+                                              .map((driver) =>
+                                                  '${driver['first_name']} ${driver['last_name']}')
                                               .toList();
-                                          
+
                                           // Show detailed error message for conflicts
                                           if (mounted) {
                                             showDialog(
                                               context: context,
                                               barrierDismissible: false,
                                               builder: (context) => Dialog(
-                                                backgroundColor: Colors.transparent,
+                                                backgroundColor:
+                                                    Colors.transparent,
                                                 child: Container(
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.98, // Increased from 0.95 to 0.98 for maximum width
                                                   constraints: BoxConstraints(
-                                                    maxWidth: MediaQuery.of(context).size.width * 0.9,
-                                                    maxHeight: MediaQuery.of(context).size.height * 0.8,
+                                                    maxHeight:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .height *
+                                                            0.75,
+                                                    minHeight:
+                                                        350, // Further reduced from 400
                                                   ),
+                                                  margin: const EdgeInsets.all(
+                                                      8), // Further reduced from 16
                                                   decoration: BoxDecoration(
-                                                    color: const Color(0xFF2C2C2C),
-                                                    borderRadius: BorderRadius.circular(16),
+                                                    color:
+                                                        const Color(0xFF2C2C2C),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
                                                     boxShadow: [
                                                       BoxShadow(
-                                                        color: Colors.black.withOpacity(0.3),
-                                                        blurRadius: 20,
-                                                        offset: const Offset(0, 10),
+                                                        color: Colors.black
+                                                            .withOpacity(0.3),
+                                                        blurRadius: 15,
+                                                        offset:
+                                                            const Offset(0, 8),
                                                       ),
                                                     ],
                                                   ),
-                                                  child: Column(
-                                                    mainAxisSize: MainAxisSize.min,
-                                                    children: [
-                                                      // Header
-                                                      Container(
-                                                        padding: const EdgeInsets.all(20),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.red.withOpacity(0.1),
-                                                          borderRadius: const BorderRadius.only(
-                                                            topLeft: Radius.circular(16),
-                                                            topRight: Radius.circular(16),
-                                                          ),
-                                                        ),
-                                                        child: Row(
-                                                          children: [
-                                                            Container(
-                                                              padding: const EdgeInsets.all(8),
-                                                              decoration: BoxDecoration(
-                                                                color: Colors.red.withOpacity(0.2),
-                                                                borderRadius: BorderRadius.circular(8),
-                                                              ),
-                                                              child: const Icon(Icons.warning, color: Colors.red, size: 24),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .all(
+                                                        8), // Reduced from 16 to make gap less obvious
+                                                    child: Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        // Header styled exactly like "Assign Driver" modal but with red color
+                                                        Container(
+                                                          padding: const EdgeInsets
+                                                              .all(
+                                                              20), // Match Assign Driver modal padding
+                                                          decoration:
+                                                              const BoxDecoration(
+                                                            color: Color(
+                                                                0xFF2C2C2C), // Same as main modal background for seamless blend
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .only(
+                                                              topLeft: Radius
+                                                                  .circular(12),
+                                                              topRight: Radius
+                                                                  .circular(12),
                                                             ),
-                                                            const SizedBox(width: 12),
-                                                            const Expanded(
-                                                              child: Text(
-                                                                'Schedule Conflict Detected',
-                                                                style: TextStyle(
-                                                                  color: Colors.white,
-                                                                  fontSize: 18,
-                                                                  fontWeight: FontWeight.bold,
+                                                          ),
+                                                          child: Row(
+                                                            children: [
+                                                              Container(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        12), // Increased back to match Assign Driver modal
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Colors
+                                                                      .red,
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12), // Increased back to match
+                                                                ),
+                                                                child: const Icon(
+                                                                    Icons
+                                                                        .warning,
+                                                                    color: Colors
+                                                                        .white,
+                                                                    size:
+                                                                        24), // Increased back to match
+                                                              ),
+                                                              const SizedBox(
+                                                                  width:
+                                                                      16), // Increased back to match
+                                                              const Expanded(
+                                                                child: Text(
+                                                                  'Schedule Conflict Detected',
+                                                                  style:
+                                                                      TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontSize:
+                                                                        16, // Reduced from 18
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
                                                                 ),
                                                               ),
-                                                            ),
-                                                          ],
+                                                            ],
+                                                          ),
                                                         ),
-                                                      ),
-                                                      // Content
-                                                      Flexible(
-                                                        child: SingleChildScrollView(
-                                                          padding: const EdgeInsets.all(20),
+
+                                                        // Content with reduced padding to blend better
+                                                        Container(
+                                                          padding: const EdgeInsets
+                                                              .all(
+                                                              16), // Reduced from 20 for better blending
                                                           child: Column(
-                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min, // Important: this prevents taking up extra space
                                                             children: [
                                                               Text(
                                                                 'Cannot assign the following drivers due to schedule conflicts:',
-                                                                style: TextStyle(
-                                                                  color: Colors.grey[300],
-                                                                  fontSize: 14,
+                                                                style:
+                                                                    TextStyle(
+                                                                  color: Colors
+                                                                          .grey[
+                                                                      300],
+                                                                  fontSize: 13,
                                                                 ),
                                                               ),
-                                                              const SizedBox(height: 16),
+                                                              const SizedBox(
+                                                                  height:
+                                                                      10), // Reduced from 14
+
                                                               // Conflicting drivers list
                                                               Container(
-                                                                padding: const EdgeInsets.all(12),
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors.red.withOpacity(0.05),
-                                                                  borderRadius: BorderRadius.circular(8),
-                                                                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        12), // Reduced from 16
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Colors
+                                                                      .red
+                                                                      .withOpacity(
+                                                                          0.08),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              8),
+                                                                  border: Border.all(
+                                                                      color: Colors
+                                                                          .red
+                                                                          .withOpacity(
+                                                                              0.25)),
                                                                 ),
                                                                 child: Column(
-                                                                  children: conflictingDriverNames.map((name) => Padding(
-                                                                    padding: const EdgeInsets.symmetric(vertical: 4),
-                                                                    child: Row(
-                                                                      children: [
-                                                                        const Icon(Icons.person, color: Colors.red, size: 18),
-                                                                        const SizedBox(width: 8),
-                                                                        Expanded(
-                                                                          child: Text(
-                                                                            name,
-                                                                            style: const TextStyle(
-                                                                              color: Colors.white,
-                                                                              fontSize: 14,
-                                                                              fontWeight: FontWeight.w500,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  )).toList(),
+                                                                  children:
+                                                                      conflictingDriverNames
+                                                                          .map((name) =>
+                                                                              Padding(
+                                                                                padding: const EdgeInsets.symmetric(vertical: 2), // Reduced from 4
+                                                                                child: Row(
+                                                                                  children: [
+                                                                                    const Icon(Icons.person, color: Colors.red, size: 16),
+                                                                                    const SizedBox(width: 8), // Reduced from 12
+                                                                                    Expanded(
+                                                                                      child: Text(
+                                                                                        name,
+                                                                                        style: const TextStyle(
+                                                                                          color: Colors.white,
+                                                                                          fontSize: 14,
+                                                                                          fontWeight: FontWeight.w500,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                              ))
+                                                                          .toList(),
                                                                 ),
                                                               ),
-                                                              const SizedBox(height: 16),
+                                                              const SizedBox(
+                                                                  height:
+                                                                      8), // Reduced from 12
+
                                                               // Information box
                                                               Container(
-                                                                padding: const EdgeInsets.all(16),
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors.orange.withOpacity(0.1),
-                                                                  borderRadius: BorderRadius.circular(12),
-                                                                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        12), // Reduced from 16
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Colors
+                                                                      .orange
+                                                                      .withOpacity(
+                                                                          0.1),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              8),
+                                                                  border: Border.all(
+                                                                      color: Colors
+                                                                          .orange
+                                                                          .withOpacity(
+                                                                              0.3)),
                                                                 ),
-                                                                child: const Row(
-                                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                                child: Row(
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment
+                                                                          .start,
                                                                   children: [
-                                                                    Icon(Icons.info, color: Colors.orange, size: 20),
-                                                                    SizedBox(width: 12),
+                                                                    const Icon(
+                                                                        Icons
+                                                                            .info,
+                                                                        color: Colors
+                                                                            .orange,
+                                                                        size:
+                                                                            16), // Reduced from 18
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            8), // Reduced from 12
                                                                     Expanded(
-                                                                      child: Column(
-                                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                                      child:
+                                                                          Column(
+                                                                        crossAxisAlignment:
+                                                                            CrossAxisAlignment.start,
                                                                         children: [
-                                                                          Text(
+                                                                          const Text(
                                                                             'What to do next:',
-                                                                            style: TextStyle(
+                                                                            style:
+                                                                                TextStyle(
                                                                               color: Colors.orange,
-                                                                              fontSize: 14,
+                                                                              fontSize: 13,
                                                                               fontWeight: FontWeight.bold,
                                                                             ),
                                                                           ),
-                                                                          SizedBox(height: 8),
+                                                                          const SizedBox(
+                                                                              height: 6), // Reduced from 8
                                                                           Text(
                                                                             '• Select different drivers who are available at this time\n'
                                                                             '• Reschedule this trip to a different time\n'
                                                                             '• Check the drivers\' schedules in the History tab',
-                                                                            style: TextStyle(
-                                                                              color: Colors.orange,
+                                                                            style:
+                                                                                TextStyle(
+                                                                              color: Colors.orange.withOpacity(0.9),
                                                                               fontSize: 12,
                                                                               height: 1.4,
                                                                             ),
@@ -1742,59 +2003,69 @@ class _TripsPageState extends State<TripsPage> {
                                                             ],
                                                           ),
                                                         ),
-                                                      ),
-                                                      // Actions
-                                                      Container(
-                                                        padding: const EdgeInsets.all(20),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.grey.withOpacity(0.05),
-                                                          borderRadius: const BorderRadius.only(
-                                                            bottomLeft: Radius.circular(16),
-                                                            bottomRight: Radius.circular(16),
+
+                                                        // Single Action Button blended with modal background
+                                                        Container(
+                                                          padding: const EdgeInsets
+                                                              .all(
+                                                              12), // Reduced for better blending
+                                                          decoration:
+                                                              const BoxDecoration(
+                                                            color: Color(
+                                                                0xFF2C2C2C), // Same as modal background for seamless blend
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .only(
+                                                              bottomLeft: Radius
+                                                                  .circular(12),
+                                                              bottomRight:
+                                                                  Radius
+                                                                      .circular(
+                                                                          12),
+                                                            ),
+                                                          ),
+                                                          child: SizedBox(
+                                                            width:
+                                                                double.infinity,
+                                                            height: 44,
+                                                            child:
+                                                                ElevatedButton(
+                                                              onPressed: () {
+                                                                Navigator.of(
+                                                                        context)
+                                                                    .pop();
+                                                                // Optionally refresh driver list or show available drivers
+                                                              },
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                backgroundColor:
+                                                                    Colors.blue,
+                                                                shape:
+                                                                    RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              8),
+                                                                ),
+                                                              ),
+                                                              child: const Text(
+                                                                'Select Different Drivers',
+                                                                style:
+                                                                    TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize: 14,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                ),
+                                                              ),
+                                                            ),
                                                           ),
                                                         ),
-                                                        child: Row(
-                                                          children: [
-                                                            Expanded(
-                                                              child: OutlinedButton(
-                                                                onPressed: () => Navigator.of(context).pop(),
-                                                                style: OutlinedButton.styleFrom(
-                                                                  side: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                                                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                                                  shape: RoundedRectangleBorder(
-                                                                    borderRadius: BorderRadius.circular(8),
-                                                                  ),
-                                                                ),
-                                                                child: const Text(
-                                                                  'Cancel',
-                                                                  style: TextStyle(color: Colors.grey),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            const SizedBox(width: 12),
-                                                            Expanded(
-                                                              child: ElevatedButton(
-                                                                onPressed: () {
-                                                                  Navigator.of(context).pop();
-                                                                  // Optionally refresh driver list or show available drivers
-                                                                },
-                                                                style: ElevatedButton.styleFrom(
-                                                                  backgroundColor: Colors.blue,
-                                                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                                                  shape: RoundedRectangleBorder(
-                                                                    borderRadius: BorderRadius.circular(8),
-                                                                  ),
-                                                                ),
-                                                                child: const Text(
-                                                                  'Select Different Drivers',
-                                                                  style: TextStyle(color: Colors.white),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ],
+                                                      ],
+                                                    ),
                                                   ),
                                                 ),
                                               ),
